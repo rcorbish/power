@@ -19,15 +19,19 @@ int main( int argc, char **argv ) {
     Connection con ; 
     con.discover() ;
 
-    sleep(2) ;
-    bool on = con.get( "ECO-780C4AA9" ) ;
-    std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
-    sleep(2) ;
-    con.set( "ECO-780C4AA9", true ) ;
+    try {
+        sleep(2) ;
+        bool on = con.get( "ECO-780C4AA9" ) ;
+        std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
+        sleep(2) ;
+        con.set( "ECO-780C4AA9", true ) ;
 
-    sleep(2) ;
-    con.set( "ECO-780C4AA9", false ) ;
-
+        sleep(2) ;
+        con.set( "ECO-780C4AA9", false ) ;
+    } catch( std::string err ) {
+        std::cerr << err << std::endl ;
+    }
+    
 	return 0 ;
 }
 
