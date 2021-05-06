@@ -178,10 +178,10 @@ class Device {
         *p++ = 0x00;
         *p++ = 0x00;
 
-        *p++ = 0xae ; 
-        *p++ = 0x49 ; 
-        *p++ = 0x52 ; 
-        *p++ = 0x0d ; 
+        *p++ = 0xde ;   // server ident
+        *p++ = 0xad ; 
+        *p++ = 0xbe ; 
+        *p++ = 0xef ; 
 
         sendMsg( msg, sizeof(msg) );       
         while( getReady == 0 ) {
@@ -233,10 +233,10 @@ class Device {
         *p++ = 0x00;
         *p++ = 0x00;
 
-        *p++ = 0xae ; 
-        *p++ = 0x49 ; 
-        *p++ = 0x52 ; 
-        *p++ = 0x0d ; 
+        *p++ = 0xde ; 
+        *p++ = 0xad ; 
+        *p++ = 0xbe ; 
+        *p++ = 0xef ; 
 
         *p++ = 0x01 ; 
         *p++ = (switchOn ? 0x01 : 0x00) ; 
