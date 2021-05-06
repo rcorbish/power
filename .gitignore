@@ -6,4 +6,5 @@ Makefile
 build/
 cmake_install.cmake
 power
-
+sprinklers
+*.so

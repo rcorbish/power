@@ -1,0 +1,218 @@
+
+#include <string.h>
+#include <iostream>
+#include <math.h>
+
+#include <glog/logging.h>
+
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h> 
+
+#include "Connection.hpp"
+
+void parseArgs( int argc, char **argv ) ;
+void sendMsg( const char *hostname ) ;
+
+
+/**
+ * main
+ * 
+ * get the initial board state
+ * solve the problem
+ * if no solution :(
+ * 
+ */
+int main( int argc, char **argv ) {
+	google::InitGoogleLogging(argv[0]);
+
+	parseArgs( argc, argv ) ;
+	std::cout << "Connecting" << std::endl ;
+
+    Connection con( "ESP_0C4AA9" ) ;
+	std::cout << "Connected" << std::endl ;
+
+    MSG408 rsp1 = con.discover() ;
+    MSG408 rspO = con.discover() ;
+
+    std::cout 
+        << rspO.name  << " " 
+        << rspO.host << " "
+        << rspO.mac << " "
+        << rspO.ssid << " "
+        << rspO.id << " "
+        << std::endl ;
+
+    MSG130 rsp2 = con.get() ;
+    std::cout 
+        << rsp2.name  << " " 
+        << std::endl ;
+
+	google::ShutdownGoogleLogging();
+	return 0 ;
+}
+
+#define PORT 9000
+void sendMsg( const char *hostname ) {
+
+    struct hostent *host;
+    struct sockaddr_in addr = {0};
+    if ((host = gethostbyname(hostname)) == NULL)
+    {
+        perror(hostname);
+        abort();
+    }
+
+    struct sockaddr_in address;
+    int opt = 1;
+    int addrlen = sizeof(address);
+
+	int server_fd = ::socket(AF_INET, SOCK_DGRAM, 0) ;
+	if( server_fd == 0 ) {
+	    perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+
+	 // Forcefully attaching socket to the port 8080
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT | SO_BROADCAST,
+                                                  &opt, sizeof(opt)))
+    {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
+
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons( PORT );
+       
+    // Forcefully attaching socket to the port 8080
+    if (bind(server_fd, (struct sockaddr *)&address, 
+                                 sizeof(address))<0)
+    {        struct sockaddr_in addr = {0};
+
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+
+    uint8_t discover[128] ;
+
+    memset( discover, 0 , sizeof( discover) ) ;
+	uint8_t *p = (discover+23) ;
+    *p++ = 0x00 ;
+    *p++ = 0xe0 ;
+    *p++ = 0x07 ;
+    *p++ = 0x0b ;
+    *p++ = 0x11 ;
+    *p++ = 0xf7 ;
+    *p++ = 0x9d ;
+    *p++ = 0x00 ;
+
+	MSG408 msg ;
+	    struct sockaddr_in cliaddr;
+		socklen_t len = sizeof(cliaddr) ;
+    int n = recvfrom(server_fd, (char *)&msg, sizeof(msg), 
+                MSG_WAITALL, 
+                ( struct sockaddr *) &cliaddr, &len);
+
+	int sz = sendto(server_fd, discover, 128,
+        MSG_CONFIRM, (const struct sockaddr *) &address, 
+            sizeof(address));
+    if( sz < 0 ) {
+        perror("sendto");
+        exit(EXIT_FAILURE);
+    }
+
+
+}
+
+
+/*
+void get() {
+
+    MSGCMDGET msgGet ;
+
+    memset( &msgGet, 0 , sizeof( msgGet ) ) ;
+
+	uint8_t *p = (uint8_t*) &msgGet ;
+
+    *p++ = 0x17 ;   // Read
+    *p++ = 0x00 ;
+    *p++ = 0x05 ;
+    *p++ = 0x00 ;
+
+    *p++ = 0x00 ;   // sequence
+    *p++ = 0x01 ;
+    *p++ = 0x00 ;
+    *p++ = 0x01 ;
+
+    *p++ = 0x00 ;   // read
+    *p++ = 0x00 ;
+
+	p = (uint8_t*) &msgGet ;
+    p += 124 ;
+    *p++ = 0xcd ;
+    *p++ = 0xb8 ;
+    *p++ = 0x42 ;
+    *p++ = 0x2a ;
+
+	address.sin_port = htons(25) ;
+	// address.sin_addr.s_addr = inet_addr("192.168.1.153");
+
+    memcpy(&(address.sin_addr.s_addr), host->h_addr, host->h_length);
+
+	// address.sin_addr.s_addr = INADDR_ANY ;
+
+	int sz = sendto(server_fd, discover, 128,
+        MSG_CONFIRM, (const struct sockaddr *) &address, 
+            sizeof(address));
+    if( sz < 0 ) {
+        perror("sendto");
+        exit(EXIT_FAILURE);
+    }
+
+    MSG408 msg ;
+	    struct sockaddr_in cliaddr;
+		socklen_t len = sizeof(cliaddr) ;
+    int n = recvfrom(server_fd, (char *)&msg, sizeof(msg), 
+                MSG_WAITALL, 
+                ( struct sockaddr *) &cliaddr, &len);
+
+    std::cout 
+    << msg.name  << " " 
+    << msg.host << " "
+    << msg.mac << " "
+    << msg.ssid << " "
+    << msg.id << " "
+    << std::endl ;
+
+}
+*/
+/**
+ * parseArgs
+ * 
+ */
+void parseArgs( int argc, char **argv ) {
+
+	int n = 0 ;
+	if( argc > 1 ) {
+		char *in = argv[1] ;
+		int l = strlen( in ) ;
+		int N = (int)sqrt( l ) ;
+
+		for( int mask=(1<<(N*N-1)) ; *in ; in++ ) {
+			if( *in=='1' ) {
+				n |= mask ;
+				mask >>= 1 ;
+			}
+			if( *in=='0' ) mask>>=1 ;
+		}
+	}
+}
+
+

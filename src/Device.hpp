@@ -2,23 +2,15 @@
 
 #pragma once
 
-#include "string"
+#include <string>
 #include <ctime>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
-#include <unistd.h>
 #include <iostream>
-// #include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include "iomanip"
 #include <pthread.h>
 
 
 typedef struct {
-    // L6s32s32s32sHHBBLl64s64sH10s12s16s16s16sLLLLH30s18s18sL
     uint32_t skip;
     char version[6];
     char id[32];
@@ -58,7 +50,6 @@ class Device {
     struct sockaddr_in remoteAddress;
     uint32_t sequence ;
     pthread_t threadId ;
-    uint8_t ready ;
     uint8_t getReady ;
     bool isOn ;
 
@@ -68,21 +59,9 @@ class Device {
     }
 
     void recvLoop() {
-        // std::cout << "Listening" << std::endl ;
         uint8_t msg[1024] ;
         for( ; ; ) {
             int n = recvfrom(localSocket, msg, sizeof(msg), 0, nullptr, nullptr ) ;
-            // std::cout << "Received " << std::dec << n << " bytes" << std::endl ;
-
-            // uint8_t* p = (uint8_t*)msg ;
-            // for( int i=0 ; i<n ; i++ ) {
-            //     std::cout << std::setw(2) << std::hex << (int)(*p++) << " ";
-            //     if( (i%16) == 15 ) {
-            //         std::cout << std::endl ; 
-            //     }
-            // }
-            // std::cout << std::endl ;        
-
             getReady = (n==130) ;
             isOn = msg[129] != 0 ;
         }

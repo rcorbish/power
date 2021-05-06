@@ -14,16 +14,7 @@
 #include "Connection.hpp"
 
 
-/**
- * main
- * 
- * get the initial board state
- * solve the problem
- * if no solution :(
- * 
- */
 int main( int argc, char **argv ) {
-
 
     Connection con ; 
     con.discover() ;
@@ -32,25 +23,11 @@ int main( int argc, char **argv ) {
     bool on = con.get( "ECO-780C4AA9" ) ;
     std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
     sleep(2) ;
-        con.set( "ECO-780C4AA9", true ) ;
-
-    // on = false ;
-    // while( !on ) {
-    //     std::cout << "." ;
-    //     con.set( "ECO-780C4AA9", true ) ;
-    //     on = con.get( "ECO-780C4AA9" ) ;
-    // }
-    // std::cout << std::endl ;
+    con.set( "ECO-780C4AA9", true ) ;
 
     sleep(2) ;
-    // while( on ) {
-    //     std::cout << "." ;
-    //     con.set( "ECO-780C4AA9", false ) ;
-    //     on = con.get( "ECO-780C4AA9" ) ;
-    // }
-    // std::cout << std::endl ;
+    con.set( "ECO-780C4AA9", false ) ;
 
-        con.set( "ECO-780C4AA9", false ) ;
 	return 0 ;
 }
 

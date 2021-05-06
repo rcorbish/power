@@ -2,51 +2,14 @@
 
 #pragma once
 
-#include "string"
+#include <string>
 #include <ctime>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
-#include <unistd.h>
 #include <iostream>
-// #include <netinet/in.h>
-// #include <arpa/inet.h>
-#include <netdb.h>
-#include "iomanip"
 #include <pthread.h>
 #include <map>
 
 #include "Device.hpp"
-
-// typedef struct {
-//     // L6s32s32s32sHHBBLl64s64sH10s12s16s16s16sLLLLH30s18s18sL
-//     uint32_t skip;
-//     char version[6];
-//     char id[32];
-//     char name[32];
-//     char shortid[32];
-
-//     uint8_t time[14];
-//     char ssid[64];
-//     char password[64];
-//     uint16_t data1 ;
-//     char region[10];
-//     char areacode[12];
-//     char ipa[16];
-//     char ipb[16];
-//     char ipc[16];
-//     uint32_t data2 ;
-//     uint32_t data3 ;
-//     uint32_t data4 ;
-//     uint32_t data5 ;
-//     uint16_t data6 ;
-//     char pwd[30];
-//     char mac[18];
-//     char host[18];
-//     uint32_t data7 ;
-// } MSG408;
-
 
 
 class Connection {
@@ -66,7 +29,6 @@ class Connection {
     }
 
     void recvLoop() {
-        // std::cout << "Listening" << std::endl ;
         MSG408 deviceInfo ;
         for( ; ; ) {
             int n = recvfrom(localSocket, &deviceInfo, sizeof(deviceInfo), 0, nullptr, nullptr ) ;
@@ -74,7 +36,6 @@ class Connection {
                 perror( "recvfrom" ) ;
                 abort() ;
             }
-            // std::cout << "Received " << std::dec << n << " bytes" << std::endl ;
             std::string deviceName( deviceInfo.id ) ;
 
             if( devices.find( deviceName ) == devices.end() ) {
@@ -90,9 +51,9 @@ class Connection {
 
         struct sockaddr_in remoteAddress ;
         memset( &remoteAddress, 0, sizeof(remoteAddress) ) ;
-        // inet_pton(AF_INET, "192.168.1.153", &remoteAddress.sin_addr ) ; 
-        inet_pton(AF_INET, "255.255.255.255", &remoteAddress.sin_addr ) ; 
+        remoteAddress.sin_family = AF_INET ;
         remoteAddress.sin_port = htons(25) ;
+        remoteAddress.sin_addr.s_addr = INADDR_BROADCAST ;
 
         size_t sz = sendto(localSocket, data, length,
                         0, 
@@ -103,7 +64,15 @@ class Connection {
             exit(EXIT_FAILURE);
         }
     }
-    
+
+    Device & getDevice( const std::string &deviceName ) {
+        auto it = devices.find( deviceName ) ;
+        if( it == devices.end() ) {
+            throw( deviceName + " not connected" ) ;
+        } 
+        return it->second ;
+    }
+
   public:
     Connection() {
         sequence = 0x55 ;
@@ -155,25 +124,13 @@ class Connection {
     }
 
     bool get( const std::string &deviceName ) {
-        auto it = devices.find( deviceName ) ;
-        if( it == devices.end() ) {
-            std::cerr << "Device " << deviceName << " not connected" << std::endl ;
-        } else {
-            return it->second.get() ;
-        }
-        return false ;
+        return getDevice( deviceName ).get() ;
     }
 
     void set( const std::string &deviceName, const bool on ) {
-        auto it = devices.find( deviceName ) ;
-        if( it == devices.end() ) {
-            std::cerr << "Device " << deviceName << " not connected" << std::endl ;
-        } else {
-            it->second.set( on ) ;
-        }
+        getDevice( deviceName ).set( on ) ;
     }
-
-};
+} ;
 
 std::ostream & operator<<( std::ostream &os, const Connection &con ) {
     os << "Device not initialized" ;
