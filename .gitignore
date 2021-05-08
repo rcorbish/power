@@ -5,6 +5,6 @@ CMakeFiles/
 Makefile
 build/
 cmake_install.cmake
-power
+test
 sprinklers
 *.so

@@ -12,14 +12,17 @@
 #include <netdb.h> 
 
 #include "Connection.hpp"
-
+#include "Weather.hpp"
 
 int main( int argc, char **argv ) {
 
-    Connection con ; 
-    con.discover() ;
-
     try {
+        Weather weather( "Brunswick", "ga", "us" ) ;
+        weather.isRaining() ;
+
+        Connection con ; 
+        con.discover() ;
+
         sleep(2) ;
         bool on = con.get( "ECO-780C4AA9" ) ;
         std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
