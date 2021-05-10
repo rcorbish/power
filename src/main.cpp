@@ -33,7 +33,7 @@ int main( int argc, char **argv ) {
         } else if( "off"==onoff ) {
             turnDeviceOn = false ;
         } else {
-            double minRainfall = ::atof( argv[2] ) ;
+            double minRainfall = ::atof( onoff.c_str() ) ;
             std::string zip( argv[3] ) ;
 
             Weather weather( zip ) ;
@@ -42,6 +42,7 @@ int main( int argc, char **argv ) {
             turnDeviceOn = totalRain < minRainfall ;
         }
 
+        std::cout << "Turning " << device << (turnDeviceOn?"ON":"OFF") << std::endl ;
         Connection con ; 
         con.discover() ;
         bool on = con.get( device ) ;
