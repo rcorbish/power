@@ -18,31 +18,39 @@ int main( int argc, char **argv ) {
 
     try {
         if( argc < 2 ) {
-            std::cerr << "Usage:" << argv[0] << " zip eco-device" << std::endl ;
+            std::cerr << "Usage:" << argv[0] << " eco-device on|off|NNN <zip>" << std::endl ;
+            std::cerr << "       if rain less than NNN mm of rain turn on sprinklers" << std::endl ;
             // "ECO-780C4AA9"
             exit( 2 ) ;
         }
-        std::string zip( argv[1] ) ;
-        std::string device( argv[2] ) ;
+        std::string device( argv[1] ) ;
+        std::string onoff( argv[2] ) ;
 
-        Weather weather( zip ) ;
-        double totalRain = weather.getRecentRainfall() ;
-        std::cout << "We had " << totalRain << "mm of rain." << std::endl ;
-        if( totalRain > 12 ) {
-            std::cout << "No need sprinklers." << std::endl ;
+        bool turnDeviceOn ;
+
+        if( "on"==onoff ) {
+            turnDeviceOn = true ;
+        } else if( "off"==onoff ) {
+            turnDeviceOn = false ;
         } else {
-            Connection con ; 
-            con.discover() ;
+            double minRainfall = ::atof( argv[2] ) ;
+            std::string zip( argv[3] ) ;
 
-            sleep(2) ;
-            bool on = con.get( device ) ;
-            std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
-            sleep(2) ;
-            con.set( device, true ) ;
-
-            sleep(2) ;
-            con.set( device, false ) ;
+            Weather weather( zip ) ;
+            double totalRain = weather.getRecentRainfall() ;
+            std::cout << zip << " had " << totalRain << "mm of rain." << std::endl ;
+            turnDeviceOn = totalRain < minRainfall ;
         }
+
+        Connection con ; 
+        con.discover() ;
+        bool on = con.get( device ) ;
+        while( on != turnDeviceOn ) {
+            con.set( device, turnDeviceOn ) ;
+            on = con.get( device ) ;
+            std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
+        }
+
     } catch( std::string err ) {
         std::cerr << err << std::endl ;
     }
