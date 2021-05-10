@@ -42,7 +42,7 @@ int main( int argc, char **argv ) {
             turnDeviceOn = totalRain < minRainfall ;
         }
 
-        std::cout << "Turning " << device << (turnDeviceOn?"ON":"OFF") << std::endl ;
+        std::cout << "Turning " << device << (turnDeviceOn?" ON":" OFF") << std::endl ;
         Connection con ; 
         con.discover() ;
         bool on = con.get( device ) ;
