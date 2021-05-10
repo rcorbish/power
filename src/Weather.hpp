@@ -9,15 +9,22 @@
 
 class Weather {
     TEST_FRIENDS 
-    friend size_t WriteMemoryCallback(void *, size_t, size_t, void *) ;
+    friend size_t WriteMemoryCallbackCurrent(void *, size_t, size_t, void *) ;
+    friend size_t WriteMemoryCallbackHistory(void *, size_t, size_t, void *) ;
+
+    double lon ; 
+    double lat ;
+    double totalRainFall ;
 
 private :
-    std::string url ;
+    std::string current_url ;
+    std::string history_url ;
 protected:
-    bool parseIsRaining( char *contents, size_t sz ) ;
+    void parseCurrent( char *contents, size_t sz ) ;
+    void parseHistory( char *contents, size_t sz ) ;
+    void read() ;
 
 public :
-    Weather( std::string city, std::string state, std::string country ) ;
-
-    bool isRaining() ;
+    Weather( std::string zip ) ;
+    double getRecentRainfall() ;
 } ;
