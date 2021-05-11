@@ -15,6 +15,7 @@ class Weather {
     double lon ; 
     double lat ;
     double totalRainFall ;
+    long rainSince ;
 
 private :
     std::string current_url ;
@@ -25,6 +26,6 @@ protected:
     void read() ;
 
 public :
-    Weather( std::string zip ) ;
+    Weather( std::string zip, long pastHours=48 ) ;
     double getRecentRainfall() ;
 } ;

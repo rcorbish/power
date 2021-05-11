@@ -9,7 +9,7 @@
 #include <cmath>
 
 
-Weather::Weather( std::string zip ) {
+Weather::Weather( std::string zip, long pastHours ) {
     char *api_key = getenv("WEATHER_API_KEY");
     if (api_key == nullptr) {
         throw std::string( "Missing WEATHER_API_KEY environment variable" ) ;
@@ -18,6 +18,8 @@ Weather::Weather( std::string zip ) {
 
     current_url = Server + "weather?zip=" + zip + "&units=metric&APPID=" + api_key ;
     history_url = Server + "onecall/timemachine?units=metric&appid=" + api_key ;
+
+    rainSince = time( nullptr ) - ( pastHours * 3600 ) ;
 }
 
 size_t
@@ -57,16 +59,29 @@ void Weather::parseHistory( char *contents, size_t sz ) {
 
     std::set<std::string> keys ;
     for( int i=0 ; i<24 ; i++ ) {
-        std::ostringstream ss ;
-        ss << "hourly[" << i << "].rain.1h" ;
-        keys.emplace( ss.str() ) ;
+        std::ostringstream ssRain ;
+        ssRain << "hourly[" << i << "].rain.1h" ;
+        keys.emplace( ssRain.str() ) ;
+        std::ostringstream ssDt ;
+        ssDt << "hourly[" << i << "].dt" ;
+        keys.emplace( ssDt.str() ) ;
     }
     JsonParser parser( contents, keys ) ;
 
-    for( auto &i : keys ) {
-        double mmRainfall = parser.getNumber( i ) ;
-        if( !std::isnan(mmRainfall) ) {
-            totalRainFall += mmRainfall ;
+    for( int i=0 ; i<24 ; i++ ) {
+        std::ostringstream ssDt ;
+        ssDt << "hourly[" << i << "].dt" ;
+        keys.emplace( ssDt.str() ) ;
+        double date = parser.getNumber( ssDt.str() ) ;
+        if( date > rainSince ) {    // only consider past 48 hours
+            std::ostringstream ssRain ;
+            ssRain << "hourly[" << i << "].rain.1h" ;
+            keys.emplace( ssRain.str() ) ;
+
+            double mmRainfall = parser.getNumber( ssRain.str() ) ;
+            if( !std::isnan(mmRainfall) ) {
+                totalRainFall += mmRainfall ;
+            }
         }
     }
 }

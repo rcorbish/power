@@ -17,9 +17,9 @@
 int main( int argc, char **argv ) {
 
     try {
-        if( argc < 2 ) {
-            std::cerr << "Usage:" << argv[0] << " eco-device on|off|NNN <zip>" << std::endl ;
-            std::cerr << "       if rain less than NNN mm of rain turn on sprinklers" << std::endl ;
+        if( argc < 3 ) {
+            std::cerr << "Usage:" << argv[0] << " eco-device on|off|NNN <zip> <HHH>" << std::endl ;
+            std::cerr << "       if rain less than NNN mm of rain in past HHH hours turn on sprinklers" << std::endl ;
             // "ECO-780C4AA9"
             exit( 2 ) ;
         }
@@ -33,10 +33,21 @@ int main( int argc, char **argv ) {
         } else if( "off"==onoff ) {
             turnDeviceOn = false ;
         } else {
-            double minRainfall = ::atof( onoff.c_str() ) ;
+            if( argc < 4 ) {
+                std::cerr << "Usage:" << argv[0] << " eco-device on|off|NNN <zip> <HHH>" << std::endl ;
+                std::cerr << "       if rain less than NNN mm of rain in past HHH hours turn on sprinklers" << std::endl ;
+                exit( 2 ) ;
+            }
             std::string zip( argv[3] ) ;
+            double minRainfall = ::atof( onoff.c_str() ) ;
 
-            Weather weather( zip ) ;
+            double pastHours = 48 ;
+            if( argc < 6 ) {
+                std::string hhh( argv[4] ) ;
+                pastHours = ::atof( hhh.c_str() ) ;
+            }
+
+            Weather weather( zip, pastHours ) ;
             double totalRain = weather.getRecentRainfall() ;
             std::cout << zip << " had " << totalRain << "mm of rain." << std::endl ;
             turnDeviceOn = totalRain < minRainfall ;
