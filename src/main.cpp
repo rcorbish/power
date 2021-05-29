@@ -15,6 +15,7 @@
 #include "Weather.hpp"
 
 int main( int argc, char **argv ) {
+    bool turnDeviceOn = false ;
 
     try {
         Connection con ; 
@@ -24,12 +25,11 @@ int main( int argc, char **argv ) {
             std::cerr << "Usage:" << argv[0] << " eco-device on|off|NNN <zip> <HHH>" << std::endl ;
             std::cerr << "       if rain less than NNN mm of rain in past HHH hours turn on sprinklers" << std::endl ;
             // "ECO-780C4AA9"
-            exit( 2 ) ;
+            exit( -1 ) ;
         }
         std::string device( argv[1] ) ;
         std::string onoff( argv[2] ) ;
 
-        bool turnDeviceOn ;
 
         if( "on"==onoff ) {
             turnDeviceOn = true ;
@@ -39,7 +39,7 @@ int main( int argc, char **argv ) {
             if( argc < 4 ) {
                 std::cerr << "Usage:" << argv[0] << " eco-device on|off|NNN <zip> <HHH>" << std::endl ;
                 std::cerr << "       if rain less than NNN mm of rain in past HHH hours turn on sprinklers" << std::endl ;
-                exit( 2 ) ;
+                exit( -1 ) ;
             }
             std::string zip( argv[3] ) ;
             double minRainfall = ::atof( onoff.c_str() ) ;
@@ -67,8 +67,9 @@ int main( int argc, char **argv ) {
 
     } catch( std::string err ) {
         std::cerr << err << std::endl ;
+        exit( -2 ) ;
     }
     
-	return 0 ;
+    return turnDeviceOn ? 1 : 0 ;
 }
 
