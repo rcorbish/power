@@ -17,6 +17,9 @@
 int main( int argc, char **argv ) {
 
     try {
+        Connection con ; 
+        con.discover() ;
+
         if( argc < 3 ) {
             std::cerr << "Usage:" << argv[0] << " eco-device on|off|NNN <zip> <HHH>" << std::endl ;
             std::cerr << "       if rain less than NNN mm of rain in past HHH hours turn on sprinklers" << std::endl ;
@@ -42,7 +45,7 @@ int main( int argc, char **argv ) {
             double minRainfall = ::atof( onoff.c_str() ) ;
 
             double pastHours = 48 ;
-            if( argc < 6 ) {
+            if( argc < 5 ) {
                 std::string hhh( argv[4] ) ;
                 pastHours = ::atof( hhh.c_str() ) ;
             }
@@ -53,9 +56,8 @@ int main( int argc, char **argv ) {
             turnDeviceOn = totalRain < minRainfall ;
         }
 
+	sleep( 2 ) ;
         std::cout << "Turning " << device << (turnDeviceOn?" ON":" OFF") << std::endl ;
-        Connection con ; 
-        con.discover() ;
         bool on = con.get( device ) ;
         while( on != turnDeviceOn ) {
             con.set( device, turnDeviceOn ) ;
