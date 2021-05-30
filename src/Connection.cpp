@@ -110,6 +110,11 @@ bool Connection::get(const std::string &deviceName) {
     return getDevice(deviceName).get();
 }
 
+bool Connection::found(const std::string &deviceName) {
+    auto it = devices.find(deviceName);
+    return (it != devices.end()) ;
+}
+
 void Connection::set(const std::string &deviceName, const bool on) {
     getDevice(deviceName).set(on);
 }

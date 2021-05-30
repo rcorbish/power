@@ -31,5 +31,6 @@ class Connection {
     void discover() ;
     bool get( const std::string &deviceName ) ;
     void set( const std::string &deviceName, const bool on ) ;
+    bool found( const std::string &deviceName ) ;
 } ;
 
