@@ -26,9 +26,10 @@ typedef struct  {
     std::string device ;
     std::string zip ;
     int desiredMMRain = 5 ;
-    int previousHoursToLookForRain = 12 ;
+    int previousHoursToLookForRain = 24 ;
     ForceState state = UNKNOWN ;
     bool verbose = false ;
+    int minutesToSprinkle = 60 ;
 } Args ;
 
 
@@ -73,11 +74,22 @@ int main( int argc, char **argv ) {
                 std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
             }
         }
+        if( on ) {
+            sleep( args.minutesToSprinkle ) ;
+            do {
+                con.set( args.device, false ) ;
+                on = con.get( args.device ) ;
+                sleep( 1 ) ;
+            } while( on ) ;
+            if( args.verbose ) {
+                std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
+            }
+        }
     } catch( std::string err ) {
         std::cerr << err << std::endl ;
         exit( -2 ) ;
     }    
-    return turnDeviceOn ? 1 : 0 ;
+    return 0 ;
 }
 
 
@@ -88,16 +100,17 @@ Args parseOptions( int argc, char **argv ) {
 
     struct option long_options[] = {
         {"device",  required_argument, nullptr,  'd' },
-        {"zip",     optional_argument, nullptr,  'z' },
-        {"period",  optional_argument, nullptr,  'p' },
-        {"needed",  optional_argument, nullptr,  'n' },
-        {"state",   optional_argument, nullptr,  's' },
+        {"zip",     required_argument, nullptr,  'z' },
+        {"period",  required_argument, nullptr,  'p' },
+        {"needed",  required_argument, nullptr,  'n' },
+        {"state",   required_argument, nullptr,  's' },
+        {"minutes", required_argument, nullptr,  'm' },
         {"verbose", no_argument,       nullptr,  'v' },
         {nullptr,   0,                 nullptr,  0 }
     } ;
 
     int opt ;
-    while( (opt = getopt_long(argc, argv, "n:p:d:z:s:v", long_options, nullptr )) != -1 ) {
+    while( (opt = getopt_long(argc, argv, "n:p:d:z:s:m:v", long_options, nullptr )) != -1 ) {
         switch (opt) {
         case 'd':
             rc.device = optarg ;
@@ -110,6 +123,9 @@ Args parseOptions( int argc, char **argv ) {
             break;
         case 'n':
             rc.desiredMMRain = ::atol( optarg ) ;
+            break;
+        case 'm':
+            rc.minutesToSprinkle = ::atol( optarg ) ;
             break;
         case 's':
             rc.state = (::strcasecmp( "on", optarg )==0) ? ON : OFF ;
@@ -129,8 +145,8 @@ Args parseOptions( int argc, char **argv ) {
 }
 
 void usage( char *argv0 ) {
-    std::cerr << "Usage:" << argv0 << " --device device --zip zip <--period HH> <--needed NN>" << std::endl ;
-    std::cerr << "       if rain less than NN mm of rain in past HH hours turn on sprinklers" << std::endl ;
+    std::cerr << "Usage:" << argv0 << " --device device --zip zip <--minutes=MMM> <--period HH> <--needed NN>" << std::endl ;
+    std::cerr << "       sprinkle for MMM minutes if rain less than NN mm of rain in past HH hours" << std::endl ;
     std::cerr << "Usage:" << argv0 << " --device device --state on|off" << std::endl ;
     exit(-1) ;
 }

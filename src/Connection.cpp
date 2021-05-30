@@ -24,7 +24,7 @@ void Connection::recvLoop() {
         std::string deviceName(deviceInfo.id);
 
         if (devices.find(deviceName) == devices.end()) {
-            std::cout << "Adding new device " << deviceName << std::endl;
+            // std::cout << "Adding new device " << deviceName << std::endl;
             devices.emplace(deviceName, deviceInfo);
         }
     }
