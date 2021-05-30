@@ -56,7 +56,7 @@ int main( int argc, char **argv ) {
             turnDeviceOn = totalRain < minRainfall ;
         }
 
-	sleep( 2 ) ;
+	sleep( 5 ) ;
         std::cout << "Turning " << device << (turnDeviceOn?" ON":" OFF") << std::endl ;
         bool on = con.get( device ) ;
         while( on != turnDeviceOn ) {
