@@ -60,6 +60,7 @@ int main( int argc, char **argv ) {
 
         for( int i=0 ; i<10 ; i++ ) {
             if( con.found( args.device ) ) break ;
+            con.discover() ;
 	        sleep( 5 ) ;
         }
         
