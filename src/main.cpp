@@ -102,21 +102,20 @@ int main( int argc, char **argv ) {
 
 void usage( char *argv0 ) ;
 
+constexpr struct option long_options[] = {
+    {"device",  required_argument, nullptr,  'd' },
+    {"zip",     required_argument, nullptr,  'z' },
+    {"period",  required_argument, nullptr,  'p' },
+    {"needed",  required_argument, nullptr,  'n' },
+    {"state",   required_argument, nullptr,  's' },
+    {"minutes", required_argument, nullptr,  'm' },
+    {"test",    no_argument,       nullptr,  't' },
+    {"verbose", no_argument,       nullptr,  'v' },
+    {nullptr,   0,                 nullptr,  0 }
+} ;
+
 Args parseOptions( int argc, char **argv ) {
     Args rc ;
-
-    struct option long_options[] = {
-        {"device",  required_argument, nullptr,  'd' },
-        {"zip",     required_argument, nullptr,  'z' },
-        {"period",  required_argument, nullptr,  'p' },
-        {"needed",  required_argument, nullptr,  'n' },
-        {"state",   required_argument, nullptr,  's' },
-        {"minutes", required_argument, nullptr,  'm' },
-        {"test",    no_argument,       nullptr,  't' },
-        {"verbose", no_argument,       nullptr,  'v' },
-        {nullptr,   0,                 nullptr,  0 }
-    } ;
-
     int opt ;
     while( (opt = getopt_long(argc, argv, "n:p:d:z:s:m:v", long_options, nullptr )) != -1 ) {
         switch (opt) {
