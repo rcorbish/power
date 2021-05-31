@@ -30,6 +30,7 @@ typedef struct  {
     ForceState state = UNKNOWN ;
     bool verbose = false ;
     int minutesToSprinkle = 60 ;
+    bool test = false ;
 } Args ;
 
 
@@ -68,14 +69,19 @@ int main( int argc, char **argv ) {
 
         bool on = con.get( args.device ) ;
         while( on != turnDeviceOn ) {
-            con.set( args.device, turnDeviceOn ) ;
-            on = con.get( args.device ) ;
+            if( args.test ) {
+                on = turnDeviceOn ;
+            } else {
+                con.set( args.device, turnDeviceOn ) ;
+                on = con.get( args.device ) ;
+            }
             if( args.verbose ) {
                 std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
             }
         }
-        if( on ) {
-            sleep( args.minutesToSprinkle ) ;
+
+        if( on && !args.test ) {
+            sleep( args.minutesToSprinkle ) ;            
             do {
                 con.set( args.device, false ) ;
                 on = con.get( args.device ) ;
@@ -105,6 +111,7 @@ Args parseOptions( int argc, char **argv ) {
         {"needed",  required_argument, nullptr,  'n' },
         {"state",   required_argument, nullptr,  's' },
         {"minutes", required_argument, nullptr,  'm' },
+        {"test",    no_argument,       nullptr,  't' },
         {"verbose", no_argument,       nullptr,  'v' },
         {nullptr,   0,                 nullptr,  0 }
     } ;
@@ -132,6 +139,9 @@ Args parseOptions( int argc, char **argv ) {
             break;
         case 'v':
             rc.verbose = true ;
+            break;
+        case 't':
+            rc.test = true ;
             break;
         default: /* '?' */
             usage( argv[0] ) ;
