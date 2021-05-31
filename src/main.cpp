@@ -156,8 +156,10 @@ Args parseOptions( int argc, char **argv ) {
 }
 
 void usage( char *argv0 ) {
-    std::cerr << "Usage:" << argv0 << " --device device --zip zip <--minutes=MMM> <--period HH> <--needed NN>" << std::endl ;
+    std::cerr << "Usage:" << argv0 << " --device device --zip zip <--minutes=MMM> <--period HH> <--needed NN> <--test>" << std::endl ;
     std::cerr << "       sprinkle for MMM minutes if rain less than NN mm of rain in past HH hours" << std::endl ;
     std::cerr << "Usage:" << argv0 << " --device device --state on|off" << std::endl ;
+    std::cerr << "       --test means show what would be done, don't change sprinklers" << std::endl ;
+    
     exit(-1) ;
 }
