@@ -29,7 +29,7 @@ typedef struct  {
     int previousHoursToLookForRain = 24 ;
     ForceState state = UNKNOWN ;
     bool verbose = false ;
-    int minutesToSprinkle = 60 ;
+    int minutesToSprinkle = 45 ;
     bool test = false ;
 } Args ;
 
@@ -82,7 +82,7 @@ int main( int argc, char **argv ) {
         }
 
         if( on && !args.test ) {
-            sleep( args.minutesToSprinkle ) ;            
+            sleep( args.minutesToSprinkle * 60 ) ;            
             do {
                 con.set( args.device, false ) ;
                 on = con.get( args.device ) ;
