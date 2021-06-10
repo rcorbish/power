@@ -67,7 +67,7 @@ int main( int argc, char **argv ) {
         }
         
         if( args.verbose ) {
-            std::cout << getTime() << "Turning device " << (turnDeviceOn?" ON":" OFF") << std::endl ;
+            std::cout << getTime() << "Need to turn device " << (turnDeviceOn?"ON":"OFF") << std::endl ;
         }
 
         if( args.test ) {
@@ -76,6 +76,9 @@ int main( int argc, char **argv ) {
                 std::cout << getTime() << "Device is " << (on?"ON":"OFF") << std::endl ;
             }
         } else { // if not testing - let's turn the device as requested
+            if( args.verbose ) {
+                std::cout << getTime() << "Turning device " << (turnDeviceOn?"ON":"OFF") << std::endl ;
+            }
             bool on = con.get( args.device ) ;
             while( on != turnDeviceOn ) {
                 con.set( args.device, turnDeviceOn ) ;
