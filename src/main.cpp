@@ -65,31 +65,34 @@ int main( int argc, char **argv ) {
         }
         
         if( args.verbose ) {
-            std::cout << "Turning " << args.device << (turnDeviceOn?" ON":" OFF") << std::endl ;
+            std::cout << "Turning device " << (turnDeviceOn?" ON":" OFF") << std::endl ;
         }
 
-        bool on = con.get( args.device ) ;
-        while( on != turnDeviceOn ) {
-            if( args.test ) {
-                on = turnDeviceOn ;
-            } else {
+        if( args.test ) {
+            if( args.verbose ) {
+                bool on = con.get( args.device ) ;
+                std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
+            }
+        } else { // if not testing - let's turn the device as requested
+            bool on = con.get( args.device ) ;
+            while( on != turnDeviceOn ) {
                 con.set( args.device, turnDeviceOn ) ;
                 on = con.get( args.device ) ;
+                if( args.verbose ) {
+                    std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
+                }
             }
-            if( args.verbose ) {
-                std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
-            }
-        }
 
-        if( on && !args.test ) {
-            sleep( args.minutesToSprinkle * 60 ) ;            
-            do {
-                con.set( args.device, false ) ;
-                on = con.get( args.device ) ;
-                sleep( 1 ) ;
-            } while( on ) ;
-            if( args.verbose ) {
-                std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
+            if( on ) {
+                if( args.verbose ) {
+                    std::cout << "Sprinkling for " << args.minutesToSprinkle << " minutes." << std::endl ;
+                }
+                sleep( args.minutesToSprinkle * 60 ) ;
+                do {
+                    con.set( args.device, false ) ;
+                    on = con.get( args.device ) ;
+                    sleep( 1 ) ;
+                } while( on ) ;
             }
         }
     } catch( std::string err ) {
