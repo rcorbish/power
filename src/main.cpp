@@ -43,6 +43,10 @@ int main( int argc, char **argv ) {
     bool turnDeviceOn = false ;
 
     Args args = parseOptions( argc, argv ) ;
+    if( args.verbose ) {
+        std::cout << getTime() << "Test mode" << std::endl ;
+    }
+
     try {
         Connection con ; 
         con.discover() ;
@@ -76,9 +80,6 @@ int main( int argc, char **argv ) {
                 std::cout << getTime() << "Device is " << (on?"ON":"OFF") << std::endl ;
             }
         } else { // if not testing - let's turn the device as requested
-            if( args.verbose ) {
-                std::cout << getTime() << "Turning device " << (turnDeviceOn?"ON":"OFF") << std::endl ;
-            }
             bool on = con.get( args.device ) ;
             while( on != turnDeviceOn ) {
                 con.set( args.device, turnDeviceOn ) ;
