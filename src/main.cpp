@@ -36,6 +36,7 @@ typedef struct  {
 
 
 Args parseOptions( int argc, char **argv ) ;
+std::string getTime() ;
 
 
 int main( int argc, char **argv ) {
@@ -54,7 +55,7 @@ int main( int argc, char **argv ) {
             Weather weather( args.zip, args.previousHoursToLookForRain ) ;
             double totalRain = weather.getRecentRainfall() ;
             if( args.verbose ) {
-                std::cout << args.zip << " had " << totalRain << "mm of rain." << std::endl ;
+                std::cout << getTime() << args.zip << " had " << totalRain << "mm of rain." << std::endl ;
             }
             turnDeviceOn = totalRain < args.desiredMMRain ;
         }
@@ -66,13 +67,13 @@ int main( int argc, char **argv ) {
         }
         
         if( args.verbose ) {
-            std::cout << "Turning device " << (turnDeviceOn?" ON":" OFF") << std::endl ;
+            std::cout << getTime() << "Turning device " << (turnDeviceOn?" ON":" OFF") << std::endl ;
         }
 
         if( args.test ) {
             if( args.verbose ) {
                 bool on = con.get( args.device ) ;
-                std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
+                std::cout << getTime() << "Device is " << (on?"ON":"OFF") << std::endl ;
             }
         } else { // if not testing - let's turn the device as requested
             bool on = con.get( args.device ) ;
@@ -80,13 +81,13 @@ int main( int argc, char **argv ) {
                 con.set( args.device, turnDeviceOn ) ;
                 on = con.get( args.device ) ;
                 if( args.verbose ) {
-                    std::cout << "Device is " << (on?"ON":"OFF") << std::endl ;
+                    std::cout << getTime() << "Device is " << (on?"ON":"OFF") << std::endl ;
                 }
             }
 
             if( on ) {
                 if( args.verbose ) {
-                    std::cout << "Sprinkling for " << args.minutesToSprinkle << " minutes." << std::endl ;
+                    std::cout << getTime() << "Sprinkling for " << args.minutesToSprinkle << " minutes." << std::endl ;
                 }
                 sleep( args.minutesToSprinkle * 60 ) ;
                 do {
@@ -165,4 +166,17 @@ void usage( char *argv0 ) {
     std::cerr << "       --test means show what would be done, don't change sprinklers" << std::endl ;
     
     exit(-1) ;
+}
+
+std::string getTime() {
+    time_t rawtime;
+    struct tm * timeinfo;
+    char buffer [80]; 
+
+    time( &rawtime );
+    timeinfo = localtime( &rawtime ) ;
+
+    strftime (buffer,80,"%H:%M:%S ",timeinfo);
+
+    return std::string( buffer ) ;
 }
