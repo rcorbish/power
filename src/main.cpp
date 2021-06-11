@@ -71,22 +71,19 @@ int main( int argc, char **argv ) {
         }
         
         if( args.verbose ) {
-            std::cout << getTime() << "Need to turn device " << (turnDeviceOn?"ON":"OFF") << std::endl ;
+            bool on = con.get( args.device ) ;
+            if( on == turnDeviceOn ) {
+                std::cout << getTime() << "Device is already " << (on?"ON":"OFF") << std::endl ;
+            } else {
+                std::cout << getTime() << "Need to turn device " << (turnDeviceOn?"ON":"OFF") << std::endl ;
+            }
         }
 
-        if( args.test ) {
-            if( args.verbose ) {
-                bool on = con.get( args.device ) ;
-                std::cout << getTime() << "Device is " << (on?"ON":"OFF") << std::endl ;
-            }
-        } else { // if not testing - let's turn the device as requested
+        if( !args.test ) {
             bool on = con.get( args.device ) ;
             while( on != turnDeviceOn ) {
                 con.set( args.device, turnDeviceOn ) ;
                 on = con.get( args.device ) ;
-            }
-            if( args.verbose ) {
-                std::cout << getTime() << "Device is " << (on?"ON":"OFF") << std::endl ;
             }
 
             if( on ) {
@@ -100,9 +97,9 @@ int main( int argc, char **argv ) {
                     sleep( 1 ) ;
                 } while( on ) ;
             }
-            if( args.verbose ) {
-                std::cout << getTime() << "Device is " << (on?"ON":"OFF") << std::endl ;
-            }
+        }
+        if( args.verbose ) {
+            std::cout << getTime() << "Program ended" << std::endl ;
         }
     } catch( std::string err ) {
         std::cerr << err << std::endl ;
