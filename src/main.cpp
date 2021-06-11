@@ -84,9 +84,9 @@ int main( int argc, char **argv ) {
             while( on != turnDeviceOn ) {
                 con.set( args.device, turnDeviceOn ) ;
                 on = con.get( args.device ) ;
-                if( args.verbose ) {
-                    std::cout << getTime() << "Device is " << (on?"ON":"OFF") << std::endl ;
-                }
+            }
+            if( args.verbose ) {
+                std::cout << getTime() << "Device is " << (on?"ON":"OFF") << std::endl ;
             }
 
             if( on ) {
@@ -99,6 +99,9 @@ int main( int argc, char **argv ) {
                     on = con.get( args.device ) ;
                     sleep( 1 ) ;
                 } while( on ) ;
+            }
+            if( args.verbose ) {
+                std::cout << getTime() << "Device is " << (on?"ON":"OFF") << std::endl ;
             }
         }
     } catch( std::string err ) {
