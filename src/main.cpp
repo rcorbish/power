@@ -43,7 +43,7 @@ int main( int argc, char **argv ) {
     bool turnDeviceOn = false ;
 
     Args args = parseOptions( argc, argv ) ;
-    if( args.verbose ) {
+    if( args.verbose && args.test ) {
         std::cout << getTime() << "Test mode" << std::endl ;
     }
 

@@ -19,6 +19,8 @@ Weather::Weather( std::string zip, long pastHours ) {
     current_url = Server + "weather?zip=" + zip + "&units=metric&APPID=" + api_key ;
     history_url = Server + "onecall/timemachine?units=metric&appid=" + api_key ;
 
+    forecast_url = Server + "onecall?units=metric&exclude=current,minutely,daily,alerts&appid=4302a8f4ea04545b9d2304d3f63ab702" ;
+
     rainSince = time( nullptr ) - ( pastHours * 3600 ) ;
 }
 
@@ -34,6 +36,14 @@ WriteMemoryCallbackHistory(void *contents, size_t size, size_t nmemb, void *user
     std::string json( (char*)contents ) ;
     Weather * self = (Weather *)userp ;
     self->parseHistory( (char*)contents, size * nmemb ) ;
+    return size * nmemb ;
+}
+
+size_t
+WriteMemoryCallbackForecast(void *contents, size_t size, size_t nmemb, void *userp) {
+    std::string json( (char*)contents ) ;
+    Weather * self = (Weather *)userp ;
+    self->parseForecast( (char*)contents, size * nmemb ) ;
     return size * nmemb ;
 }
 
@@ -84,6 +94,26 @@ void Weather::parseHistory( char *contents, size_t sz ) {
             }
         }
     }
+}
+
+void Weather::parseForecast( char *contents, size_t sz ) {
+    std::stack<std::string> tags ;
+    char *p = (char*)contents ;
+    char *end = p + sz ;
+   
+    int hoursForecast = 12 ;
+
+    std::set<std::string> keys ;
+    for( int i=0 ; i<hoursForecast ; i++ ) {
+        std::ostringstream ssRain ;
+        ssRain << "hourly[" << i << "].rain.1h" ;
+        keys.emplace( ssRain.str() ) ;
+        std::ostringstream ssDt ;
+        ssDt << "hourly[" << i << "].dt" ;
+        keys.emplace( ssDt.str() ) ;
+    }
+
+    JsonParser parser( contents, keys ) ;
 }
 
 
