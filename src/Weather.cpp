@@ -25,17 +25,16 @@ Weather::Weather( std::string zip, long pastHours, long forecastHours ) {
     hoursForecast = forecastHours ;
 }
 
-void sendUrlRequest( CURL *curl, const char *url, size_t (*write_callback)(char *ptr, size_t size, size_t nmemb, void *userdata) ) ;
 
 size_t
-WriteMemoryCallbackCurrent(void *contents, size_t size, size_t nmemb, void *userp) {
+WriteMemoryCallbackCurrent(char *contents, size_t size, size_t nmemb, void *userp) {
     std::string json( (char*)contents ) ;
     Weather * self = (Weather *)userp ;
     self->parseCurrent( (char*)contents, size * nmemb ) ;
     return size * nmemb ;
 }
 size_t
-WriteMemoryCallbackHistory(void *contents, size_t size, size_t nmemb, void *userp) {
+WriteMemoryCallbackHistory(char *contents, size_t size, size_t nmemb, void *userp) {
     std::string json( (char*)contents ) ;
     Weather * self = (Weather *)userp ;
     self->parseHistory( (char*)contents, size * nmemb ) ;
@@ -43,7 +42,7 @@ WriteMemoryCallbackHistory(void *contents, size_t size, size_t nmemb, void *user
 }
 
 size_t
-WriteMemoryCallbackForecast(void *contents, size_t size, size_t nmemb, void *userp) {
+WriteMemoryCallbackForecast(char *contents, size_t size, size_t nmemb, void *userp) {
     std::string json( (char*)contents ) ;
     Weather * self = (Weather *)userp ;
     self->parseForecast( (char*)contents, size * nmemb ) ;
@@ -129,73 +128,31 @@ void Weather::parseForecast( char *contents, size_t sz ) {
 
 
 void Weather::read() {
+    // setup accumulators
+    totalRainFall = 0 ;
+    forecastRainChance = 0 ;
+
     CURL *curl;
     CURLcode res;
     curl_global_init(CURL_GLOBAL_DEFAULT) ;
     curl = curl_easy_init();
     if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, current_url.c_str() ) ;
-
-        /* send all data to this function  */
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallbackCurrent);
-
-        /* we pass our 'chunk' struct to the callback function */
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, this ) ;
-        
-        /* some servers don't like requests that are made without a user-agent
-            field, so we provide one */
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, "sprinklers");
-
-        /* Perform the request, res will get the return code */
-        res = curl_easy_perform(curl);
-        /* Check for errors */
-        if (res != CURLE_OK)
-            throw std::string( curl_easy_strerror(res) ) ;
-
-        totalRainFall = 0 ;
+        sendUrlRequest( curl, current_url.c_str(), WriteMemoryCallbackCurrent ) ;
 
         time_t now = time( nullptr ) ;
         long yesterday =  now ;
+        // We'll look back 3 days of history for rainfall
+        for( int i=0 ; i<3 ; i++ ) {
+            std::ostringstream ss ;
+            ss << history_url << "&lat=" << lat << "&lon=" << lon << "&dt=" << yesterday ;
+            sendUrlRequest( curl, ss.str().c_str(), WriteMemoryCallbackHistory ) ;
+
+            yesterday -=  86400 ;
+        }
+
         std::ostringstream ss ;
-        ss << history_url << "&lat=" << lat << "&lon=" << lon << "&dt=" << yesterday ;
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallbackHistory );
-        curl_easy_setopt(curl, CURLOPT_URL, ss.str().c_str() ) ;
-        res = curl_easy_perform(curl);
-        /* Check for errors */
-        if (res != CURLE_OK)
-            throw std::string( curl_easy_strerror(res) ) ;
-
-
-        yesterday -=  86400 ;
-        ss.str("");
-        ss.clear();
-        ss << history_url << "&lat=" << lat << "&lon=" << lon << "&dt=" << yesterday ;
-        curl_easy_setopt(curl, CURLOPT_URL, ss.str().c_str() ) ;
-        res = curl_easy_perform(curl);
-        /* Check for errors */
-        if (res != CURLE_OK)
-            throw std::string( curl_easy_strerror(res) ) ;
-
-        yesterday -=  86400 ;
-        ss.str("");
-        ss.clear();
-        ss << history_url << "&lat=" << lat << "&lon=" << lon << "&dt=" << yesterday ;
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallbackForecast );
-        curl_easy_setopt(curl, CURLOPT_URL, ss.str().c_str() ) ;
-        res = curl_easy_perform(curl);
-        /* Check for errors */
-        if (res != CURLE_OK)
-            throw std::string( curl_easy_strerror(res) ) ;
-
-        forecastRainChance = 0 ;
-        ss.str("");
-        ss.clear();
         ss << forecast_url << "&lat=" << lat << "&lon=" << lon ;
-        curl_easy_setopt(curl, CURLOPT_URL, ss.str().c_str() ) ;
-        res = curl_easy_perform(curl);
-        /* Check for errors */
-        if (res != CURLE_OK)
-            throw std::string( curl_easy_strerror(res) ) ;
+        sendUrlRequest( curl, ss.str().c_str(), WriteMemoryCallbackForecast ) ;
 
         curl_easy_cleanup(curl);
     }
@@ -204,9 +161,11 @@ void Weather::read() {
 }
 
 
-void sendUrlRequest( CURL *curl, const char *url, size_t (*write_callback)(char *ptr, size_t size, size_t nmemb, void *userdata) ) {
+void Weather::sendUrlRequest( void *x, const char *url, size_t (*write_callback)(char *ptr, size_t size, size_t nmemb, void *userdata) ) {
+    CURL *curl = (CURL*)x ;
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback );
     curl_easy_setopt(curl, CURLOPT_URL, url ) ;
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, this ) ;
     CURLcode res = curl_easy_perform(curl);
     /* Check for errors */
     if (res != CURLE_OK)
