@@ -61,10 +61,11 @@ int main( int argc, char **argv ) {
             weather.read() ;
             double totalRain = weather.getRecentRainfall() ;
             double forecastRain = weather.getForecastRainChance() ;
+
             if( args.verbose ) {
                 std::cout << getTime() << args.zip << " received " << totalRain << "mm and forecasts " << forecastRain << "mm of rain." << std::endl ;
             }
-            turnDeviceOn = totalRain < args.desiredMMRain ;
+            turnDeviceOn = (totalRain+forecastRain*.5) < args.desiredMMRain ;
         }
 
         for( int i=0 ; i<10 ; i++ ) {
