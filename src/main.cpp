@@ -32,6 +32,7 @@ typedef struct  {
     bool verbose = false ;
     int minutesToSprinkle = 45 ;
     bool test = false ;
+    int forecastHours = 12 ;
 } Args ;
 
 
@@ -56,10 +57,12 @@ int main( int argc, char **argv ) {
         } else if( args.state == OFF ) {
             turnDeviceOn = false ;
         } else {
-            Weather weather( args.zip, args.previousHoursToLookForRain ) ;
+            Weather weather( args.zip, args.previousHoursToLookForRain, args.forecastHours ) ;
+            weather.read() ;
             double totalRain = weather.getRecentRainfall() ;
+            double forecastRain = weather.getForecastRainChance() ;
             if( args.verbose ) {
-                std::cout << getTime() << args.zip << " had " << totalRain << "mm of rain." << std::endl ;
+                std::cout << getTime() << args.zip << " received " << totalRain << "mm and forecasts " << forecastRain << "mm of rain." << std::endl ;
             }
             turnDeviceOn = totalRain < args.desiredMMRain ;
         }
@@ -115,6 +118,7 @@ constexpr struct option long_options[] = {
     {"device",  required_argument, nullptr,  'd' },
     {"zip",     required_argument, nullptr,  'z' },
     {"period",  required_argument, nullptr,  'p' },
+    {"forecast",  required_argument, nullptr,  'f' },
     {"needed",  required_argument, nullptr,  'n' },
     {"state",   required_argument, nullptr,  's' },
     {"minutes", required_argument, nullptr,  'm' },
@@ -136,6 +140,9 @@ Args parseOptions( int argc, char **argv ) {
             break;
         case 'p':
             rc.previousHoursToLookForRain = ::atol( optarg ) ;
+            break;
+        case 'f':
+            rc.forecastHours = ::atol( optarg ) ;
             break;
         case 'n':
             rc.desiredMMRain = ::atol( optarg ) ;
@@ -164,8 +171,8 @@ Args parseOptions( int argc, char **argv ) {
 }
 
 void usage( char *argv0 ) {
-    std::cerr << "Usage:" << argv0 << " --device device --zip zip <--minutes=MMM> <--period HH> <--needed NN> <--test>" << std::endl ;
-    std::cerr << "       sprinkle for MMM minutes if rain less than NN mm of rain in past HH hours" << std::endl ;
+    std::cerr << "Usage:" << argv0 << " --device device --zip zip <--minutes=MMM> <--period HH> <--forecast FF> <--needed NN> <--test>" << std::endl ;
+    std::cerr << "       sprinkle for MMM minutes if rain less than NN mm of rain in past HH hours plus FF forecast rain" << std::endl ;
     std::cerr << "Usage:" << argv0 << " --device device --state on|off" << std::endl ;
     std::cerr << "       --test means show what would be done, don't change sprinklers" << std::endl ;
     

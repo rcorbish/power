@@ -9,7 +9,8 @@
 #include <cmath>
 
 
-Weather::Weather( std::string zip, long pastHours ) {
+
+Weather::Weather( std::string zip, long pastHours, long forecastHours ) {
     char *api_key = getenv("WEATHER_API_KEY");
     if (api_key == nullptr) {
         throw std::string( "Missing WEATHER_API_KEY environment variable" ) ;
@@ -18,11 +19,13 @@ Weather::Weather( std::string zip, long pastHours ) {
 
     current_url = Server + "weather?zip=" + zip + "&units=metric&APPID=" + api_key ;
     history_url = Server + "onecall/timemachine?units=metric&appid=" + api_key ;
-
-    forecast_url = Server + "onecall?units=metric&exclude=current,minutely,daily,alerts&appid=4302a8f4ea04545b9d2304d3f63ab702" ;
+    forecast_url = Server + "onecall?units=metric&exclude=current,minutely,daily,alerts&APPID=" + api_key ;
 
     rainSince = time( nullptr ) - ( pastHours * 3600 ) ;
+    hoursForecast = forecastHours ;
 }
+
+void sendUrlRequest( CURL *curl, const char *url, size_t (*write_callback)(char *ptr, size_t size, size_t nmemb, void *userdata) ) ;
 
 size_t
 WriteMemoryCallbackCurrent(void *contents, size_t size, size_t nmemb, void *userp) {
@@ -101,19 +104,25 @@ void Weather::parseForecast( char *contents, size_t sz ) {
     char *p = (char*)contents ;
     char *end = p + sz ;
    
-    int hoursForecast = 12 ;
 
     std::set<std::string> keys ;
     for( int i=0 ; i<hoursForecast ; i++ ) {
-        std::ostringstream ssRain ;
-        ssRain << "hourly[" << i << "].rain.1h" ;
-        keys.emplace( ssRain.str() ) ;
-        std::ostringstream ssDt ;
-        ssDt << "hourly[" << i << "].dt" ;
-        keys.emplace( ssDt.str() ) ;
+        std::ostringstream ssRainPctChange ;
+        ssRainPctChange << "hourly[" << i << "].pop" ;
+        keys.emplace( ssRainPctChange.str() ) ;
     }
 
     JsonParser parser( contents, keys ) ;
+
+    for( int i=0 ; i<hoursForecast ; i++ ) {
+        std::ostringstream ssRainPctChange ;
+        ssRainPctChange << "hourly[" << i << "].pop" ;
+
+        double chanceOfRain = parser.getNumber( ssRainPctChange.str() ) ;
+        if( !std::isnan(chanceOfRain) ) {
+            forecastRainChance += chanceOfRain ;
+        }
+    }
 }
 
 
@@ -129,7 +138,7 @@ void Weather::read() {
 
         /* send all data to this function  */
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallbackCurrent);
-        
+
         /* we pass our 'chunk' struct to the callback function */
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, this ) ;
         
@@ -156,6 +165,7 @@ void Weather::read() {
         if (res != CURLE_OK)
             throw std::string( curl_easy_strerror(res) ) ;
 
+
         yesterday -=  86400 ;
         ss.str("");
         ss.clear();
@@ -170,6 +180,17 @@ void Weather::read() {
         ss.str("");
         ss.clear();
         ss << history_url << "&lat=" << lat << "&lon=" << lon << "&dt=" << yesterday ;
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallbackForecast );
+        curl_easy_setopt(curl, CURLOPT_URL, ss.str().c_str() ) ;
+        res = curl_easy_perform(curl);
+        /* Check for errors */
+        if (res != CURLE_OK)
+            throw std::string( curl_easy_strerror(res) ) ;
+
+        forecastRainChance = 0 ;
+        ss.str("");
+        ss.clear();
+        ss << forecast_url << "&lat=" << lat << "&lon=" << lon ;
         curl_easy_setopt(curl, CURLOPT_URL, ss.str().c_str() ) ;
         res = curl_easy_perform(curl);
         /* Check for errors */
@@ -183,8 +204,19 @@ void Weather::read() {
 }
 
 
+void sendUrlRequest( CURL *curl, const char *url, size_t (*write_callback)(char *ptr, size_t size, size_t nmemb, void *userdata) ) {
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback );
+    curl_easy_setopt(curl, CURLOPT_URL, url ) ;
+    CURLcode res = curl_easy_perform(curl);
+    /* Check for errors */
+    if (res != CURLE_OK)
+        throw std::string( curl_easy_strerror(res) ) ;
+}
+
 double Weather::getRecentRainfall() {
-    read() ;
     return totalRainFall ;
+}
+double Weather::getForecastRainChance() {
+    return forecastRainChance ;
 }
 
