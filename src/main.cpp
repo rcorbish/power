@@ -188,7 +188,7 @@ std::string getTime() {
     time( &rawtime );
     timeinfo = localtime( &rawtime ) ;
 
-    strftime (buffer,80,"%H:%M:%S ",timeinfo);
+    strftime (buffer,80,"%d-%b-%Y %H:%M:%S ",timeinfo);
 
     return std::string( buffer ) ;
 }
