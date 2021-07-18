@@ -14,6 +14,8 @@
 
 #include "Connection.hpp"
 #include "Weather.hpp"
+#include "History.hpp"
+
 
 typedef enum {
     ON ,
@@ -66,6 +68,8 @@ int main( int argc, char **argv ) {
                 std::cout << getTime() << args.zip << " received " << totalRain << "mm and forecasts " << forecastRain << "mm of rain." << std::endl ;
             }
             turnDeviceOn = (totalRain+forecastRain*.5) < args.desiredMMRain ;
+            HistoryEntry he( totalRain, forecastRain, args.minutesToSprinkle ) ;
+            appendHistory( he ) ;
         }
 
         for( int i=0 ; i<10 ; i++ ) {
@@ -73,7 +77,7 @@ int main( int argc, char **argv ) {
             con.discover() ;
 	        sleep( 5 ) ;
         }
-        
+
         if( args.verbose ) {
             bool on = con.get( args.device ) ;
             if( on == turnDeviceOn ) {

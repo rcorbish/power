@@ -41,6 +41,7 @@ WriteMemoryCallbackHistory(char *contents, size_t size, size_t nmemb, void *user
     return size * nmemb ;
 }
 
+
 size_t
 WriteMemoryCallbackForecast(char *contents, size_t size, size_t nmemb, void *userp) {
     std::string json( (char*)contents ) ;
@@ -48,6 +49,7 @@ WriteMemoryCallbackForecast(char *contents, size_t size, size_t nmemb, void *use
     self->parseForecast( (char*)contents, size * nmemb ) ;
     return size * nmemb ;
 }
+
 
 void Weather::parseCurrent( char *contents, size_t sz ) {
     std::stack<std::string> tags ;
@@ -63,6 +65,7 @@ void Weather::parseCurrent( char *contents, size_t sz ) {
     lat = parser.getNumber( "coord.lat" ) ;
     // std::cout << lon << "," << lat << std::endl ;
 }
+
 
 void Weather::parseHistory( char *contents, size_t sz ) {
     std::stack<std::string> tags ;
@@ -98,6 +101,7 @@ void Weather::parseHistory( char *contents, size_t sz ) {
     }
 }
 
+
 void Weather::parseForecast( char *contents, size_t sz ) {
     std::stack<std::string> tags ;
     char *p = (char*)contents ;
@@ -123,8 +127,6 @@ void Weather::parseForecast( char *contents, size_t sz ) {
         }
     }
 }
-
-
 
 
 void Weather::read() {
@@ -172,9 +174,12 @@ void Weather::sendUrlRequest( void *x, const char *url, size_t (*write_callback)
         throw std::string( curl_easy_strerror(res) ) ;
 }
 
+
 double Weather::getRecentRainfall() {
     return totalRainFall ;
 }
+
+
 double Weather::getForecastRainChance() {
     return forecastRainChance ;
 }

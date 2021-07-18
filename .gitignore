@@ -1,4 +1,5 @@
 .idea/
+_deps/
 .vscode/
 CMakeCache.txt
 CMakeFiles/
@@ -7,4 +8,5 @@ build/
 cmake_install.cmake
 testcase
 sprinklers
+webserver
 *.so
