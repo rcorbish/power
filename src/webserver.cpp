@@ -69,6 +69,5 @@ std::string parseFile( const char *historyFileName ) {
         first = false ;
     }
     buf << "]}" ;
-    std::cout << buf.str() << std::endl ;
     return buf.str() ;
 }
