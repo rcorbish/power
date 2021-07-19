@@ -46,7 +46,7 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
 
     if (ev == MG_EV_HTTP_MSG) {
         std::string s = parseFile( (const char *)fn_data) ;
-        mg_http_reply(nc, 200, "Content-Type: application/json\r\n", "%s", s.c_str() ) ;
+        mg_http_reply(nc, 200, "Content-Type: application/json\nServer: Sprinklers\r\n", "%s", s.c_str() ) ;
     }
 }
 

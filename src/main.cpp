@@ -68,7 +68,7 @@ int main( int argc, char **argv ) {
                 std::cout << getTime() << args.zip << " received " << totalRain << "mm and forecasts " << forecastRain << "mm of rain." << std::endl ;
             }
             turnDeviceOn = (totalRain+forecastRain*.5) < args.desiredMMRain ;
-            HistoryEntry he( totalRain, forecastRain, args.minutesToSprinkle ) ;
+            HistoryEntry he( totalRain, forecastRain, turnDeviceOn ? args.minutesToSprinkle : 0 ) ;
             if( !args.test ) {
                 appendHistory( he ) ;
             }
