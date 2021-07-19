@@ -69,7 +69,9 @@ int main( int argc, char **argv ) {
             }
             turnDeviceOn = (totalRain+forecastRain*.5) < args.desiredMMRain ;
             HistoryEntry he( totalRain, forecastRain, args.minutesToSprinkle ) ;
-            appendHistory( he ) ;
+            if( !args.test ) {
+                appendHistory( he ) ;
+            }
         }
 
         for( int i=0 ; i<10 ; i++ ) {

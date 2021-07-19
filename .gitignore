@@ -10,3 +10,5 @@ testcase
 sprinklers
 webserver
 *.so
+*.dat
+*.log

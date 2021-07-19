@@ -34,5 +34,5 @@ class HistoryEntry {
 } ;
 
 void appendHistory( const HistoryEntry &entry ) ;
-std::list<HistoryEntry> loadHistory() ;
+std::list<HistoryEntry> loadHistory( const char *historyFileName ) ;
 

@@ -22,12 +22,12 @@ std::ostream &operator<<(std::ostream &os, const HistoryEntry &e) {
 
 constexpr int HistoryLength = 10 ;
 
-std::list<HistoryEntry> loadHistory() {
+std::list<HistoryEntry> loadHistory( const char *historyLogName ) {
 
     std::list<HistoryEntry> rc;
 
     std::fstream logFile;
-    logFile.open(HistoryLogName, std::ios::in);
+    logFile.open(historyLogName, std::ios::in);
 
     if (logFile.is_open() ) {
         for( ;; ) {
