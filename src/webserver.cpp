@@ -45,8 +45,13 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
     struct http_message *hm = (struct http_message *)ev_data;
 
     if (ev == MG_EV_HTTP_MSG) {
-        std::string s = parseFile( (const char *)fn_data) ;
-        mg_http_reply(nc, 200, "Content-Type: application/json\nServer: Sprinklers\r\n", "%s", s.c_str() ) ;
+        struct mg_http_message &msg = *((struct mg_http_message*)ev_data) ;  
+	if( 0==mg_vcmp( &msg.uri, "/history" ) ) {
+          std::string s = parseFile( (const char *)fn_data) ;
+          mg_http_reply(nc, 200, "Content-Type: application/json\nServer: Sprinklers\r\n", "%s", s.c_str() ) ;
+	} else {
+          mg_http_reply(nc, 400, "Server: Sprinklers\r\n", "" ) ;
+	}
     }
 }
 
