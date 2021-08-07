@@ -50,6 +50,11 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
           std::string s = parseFile( (const char *)fn_data) ;
           mg_http_reply(nc, 200, "Content-Type: application/json\nServer: Sprinklers\r\n", "%s", s.c_str() ) ;
 	} else {
+          char addr_buf[128] ;
+          const char * remote_addr = mg_ntoa( &nc->peer, addr_buf, sizeof(addr_buf) ) ;
+          
+          std::cout << "Bad call from " << remote_addr << " to " << msg.method.ptr << std::endl ;
+
           mg_http_reply(nc, 400, "Server: Sprinklers\r\n", "" ) ;
 	}
     }
