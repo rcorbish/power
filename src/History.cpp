@@ -36,12 +36,13 @@ std::list<HistoryEntry> loadHistory( const char *historyLogName ) {
             float forecastRain;
             int sprinkleTime;
 
+
             logFile >> eventTimes >> rainFall >> forecastRain >> sprinkleTime ;
             if( logFile.eof() ) break ; 
-            rc.emplace_back(eventTimes, rainFall, forecastRain, sprinkleTime);
             if( rc.size() == HistoryLength ) {
                 rc.pop_front() ;
             }
+            rc.emplace_back(eventTimes, rainFall, forecastRain, sprinkleTime);
         } 
         logFile.close();
     }
