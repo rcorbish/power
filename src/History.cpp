@@ -20,7 +20,7 @@ std::ostream &operator<<(std::ostream &os, const HistoryEntry &e) {
     return os;
 }
 
-constexpr int HistoryLength = 10 ;
+constexpr int HistoryLength = 15 ;
 
 std::list<HistoryEntry> loadHistory( const char *historyLogName ) {
 
