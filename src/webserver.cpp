@@ -10,6 +10,7 @@
 static const char *s_http_port = "https://0.0.0.0:8111";
 static const char *CertFileName = "cert.pem" ;
 static const char *KeyFileName = "key.pem" ;
+extern const char *WebPageSource ;
 
 struct mg_tls_opts tls_opts ;
 
@@ -56,8 +57,8 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
         if( mg_http_match_uri(msg, "/history" ) ) {
             std::string s = parseFile( (const char *)fn_data) ;
             mg_http_reply(nc, 200, "Content-Type: application/json\nServer: Sprinklers\r\n", "%s", s.c_str() ) ;
-        } else if( mg_http_match_uri(msg, "/favicon.ico" ) ) {
-            mg_http_reply(nc, 200, "Server: Sprinklers\r\n", "" ) ;
+        } else if( mg_http_match_uri(msg, "/home" ) ) {
+            mg_http_reply(nc, 200, "Content-Type: text/html\nServer: Sprinklers\r\n", "%s", WebPageSource ) ;
         } else {
             char addr_buf[128] ;
             const char * remote_addr = mg_ntoa( &nc->peer, addr_buf, sizeof(addr_buf) ) ;          
@@ -90,3 +91,52 @@ std::string parseFile( const char *historyFileName ) {
     buf << "]}" ;
     return buf.str() ;
 }
+
+const char *WebPageSource = 
+"<!DOCTYPE html>\n"
+"<html>\n"
+"<head>\n"
+"<meta charset='utf-8'/>\n"
+"<link rel='shortcut icon' href='data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA/4QAAOvl3wDy7+sAz8a8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABEAARAAEQAAEQABEAARAAAAAAAAAAAAAAEQABEAARAAARAAEQABEAAAAAAAAAAABEQENENEQABEREREREQkQEI0REJENERERERCRENEREQERERDREJEAABCNEQkREAABEREREJEQAAENEBCRENAAABEQERARAAAAAAABEAAAADOcwAAznMAAP//AADnOQAA5zkAAP//AACIBwAAAAEAAAAAAAAAAAAAgAMAAMAHAACABwAAhAcAAMRPAAD+fwAA' type='image/x-icon'>\n"
+
+"<script>\n"
+
+"function reqListener () {\n"
+"   var data = JSON.parse(this.responseText);\n"
+"   var div = document.getElementById( 'rainfall' );\n"
+"   for( var i=0 ; i<data.history.length ; i++ ) {\n"
+"       var newNode = document.createElement('div');\n"
+"       var ht = (5*data.history[i].rain);\n"
+"       ht = ht>199 ? 199 : ht ;"
+"       var height = '' + ht + 'px';\n"
+"       newNode.style.margin = '10px' ;\n"
+"       newNode.style.height = height;\n"
+"       newNode.style.width = '25px';\n"
+"       newNode.style.position = 'relative';\n"
+"       newNode.style.display = 'inline-block';\n"
+"       newNode.style.verticalAlign = 'baseline';\n"
+"       newNode.style.backgroundColor = 'blue';\n"
+"       div.appendChild( newNode );\n"
+"   }\n"
+"}\n"
+
+"function document_loaded() {\n"
+"   var oReq = new XMLHttpRequest();\n"
+"   oReq.addEventListener('load', reqListener);\n"
+"   oReq.open('GET', 'history');\n"
+"   oReq.send();\n"
+"}\n"
+
+"window.addEventListener('load', document_loaded);\n"
+
+"</script>\n"
+
+"</head>\n"
+"<body>\n"
+
+"<div id='rainfall' style='height:200px;overflow:hidden;'>\n"
+"</div>\n"
+
+"</body>\n"
+"</html>\n"
+;
