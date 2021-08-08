@@ -65,7 +65,6 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
             mg_http_reply(nc, 400, "Server: Sprinklers\r\n", "" ) ;
         }
     } else if (ev == MG_EV_ACCEPT ) {
-        struct mg_tls_opts tls_opts ;        
         mg_tls_init( nc, &tls_opts ) ;
     }
 }
