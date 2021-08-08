@@ -11,8 +11,7 @@ static const char *s_http_port = "https://0.0.0.0:8111";
 static const char *CertFileName = "cert.pem" ;
 static const char *KeyFileName = "key.pem" ;
 
-char *certFile ;
-char *keyFile ;
+struct mg_tls_opts tls_opts ;
 
 void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data) ;
 std::string parseFile( const char* fileName ) ;
@@ -22,8 +21,8 @@ int main(int argc, char *argv[]) {
     const char *historyFileName = (argc>1) ? argv[1] : HistoryLogName ;
     std::cout << "Using history file: " << historyFileName << std::endl ;
 
-    certFile = (argc>2) ? argv[2] : (char*)CertFileName ;
-    keyFile = (argc>3) ? argv[3] : (char*)KeyFileName ;
+    tls_opts.cert = (argc>2) ? argv[2] : (char*)CertFileName ;
+    tls_opts.certkey = (argc>3) ? argv[3] : (char*)KeyFileName ;
 
     struct mg_mgr mgr;
     struct mg_connection *nc;
@@ -65,12 +64,8 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
             mg_http_reply(nc, 400, "Server: Sprinklers\r\n", "" ) ;
         }
     } else if (ev == MG_EV_ACCEPT ) {
-        struct mg_tls_opts opts = {
-            //.ca = "ca.pem",         // Uncomment to enable two-way SSL
-            .cert = certFile,     // Certificate PEM file
-            .certkey = keyFile,  // This pem contains both cert and key
-        };
-        mg_tls_init(nc, &opts);
+        struct mg_tls_opts tls_opts ;        
+        mg_tls_init( nc, &tls_opts ) ;
     }
 }
 
