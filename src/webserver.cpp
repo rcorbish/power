@@ -61,8 +61,8 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
         } else {
             char addr_buf[128] ;
             const char * remote_addr = mg_ntoa( &nc->peer, addr_buf, sizeof(addr_buf) ) ;          
-            std::cout << "Bad call from " << remote_addr << " to " << msg->method.ptr << std::endl ;
-            mg_http_reply(nc, 400, "Server: Sprinklers\r\n", "" ) ;
+            std::cout << "Bad call from " << remote_addr << "\n" << msg->method.ptr << std::endl ;
+            mg_http_reply(nc, 400, nullptr, "" ) ;
         }
     } else if (ev == MG_EV_ACCEPT ) {
         mg_tls_init( nc, &tls_opts ) ;
