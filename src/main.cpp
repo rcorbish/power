@@ -83,7 +83,7 @@ int main( int argc, char **argv ) {
         if( args.verbose ) {
             bool on = con.get( args.device ) ;
             if( on == turnDeviceOn ) {
-                std::cout << getTime() << "Device is already " << (on?"ON":"OFF") << std::endl ;
+                std::cout << getTime() << "Devhttps://localhost:8111/historyice is already " << (on?"ON":"OFF") << std::endl ;
             } else {
                 std::cout << getTime() << "Need to turn device " << (turnDeviceOn?"ON":"OFF") << std::endl ;
             }
@@ -91,12 +91,7 @@ int main( int argc, char **argv ) {
 
         if( !args.test ) {
             bool on = con.get( args.device ) ;
-            while( on != turnDeviceOn ) {
-                con.set( args.device, turnDeviceOn ) ;
-                on = con.get( args.device ) ;
-            }
-
-            if( on ) {
+            while( on != turnDeviceOn ) {https://localhost:8111/history
                 if( args.verbose ) {
                     std::cout << getTime() << "Sprinkling for " << args.minutesToSprinkle << " minutes." << std::endl ;
                 }

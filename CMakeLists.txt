@@ -20,5 +20,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable( mongoose )  
 set( MONGOOSE_SRC ${FETCHCONTENT_BASE_DIR}/mongoose-src )
 
+find_package(OpenSSL)
+
 subdirs(src)
 subdirs(tst)
