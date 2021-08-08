@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
     const char *historyFileName = (argc>1) ? argv[1] : HistoryLogName ;
     std::cout << "Using history file: " << historyFileName << std::endl ;
 
+    memset( &tls_opts, 0, sizeof(tls_opts) ) ;
     tls_opts.cert = (argc>2) ? argv[2] : (char*)CertFileName ;
     tls_opts.certkey = (argc>3) ? argv[3] : (char*)KeyFileName ;
 
