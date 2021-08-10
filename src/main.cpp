@@ -83,7 +83,7 @@ int main( int argc, char **argv ) {
         if( args.verbose ) {
             bool on = con.get( args.device ) ;
             if( on == turnDeviceOn ) {
-                std::cout << getTime() << "Devhttps://localhost:8111/historyice is already " << (on?"ON":"OFF") << std::endl ;
+                std::cout << getTime() << "Device is already " << (on?"ON":"OFF") << std::endl ;
             } else {
                 std::cout << getTime() << "Need to turn device " << (turnDeviceOn?"ON":"OFF") << std::endl ;
             }
