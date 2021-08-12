@@ -125,7 +125,7 @@ const char *WebPageSource =
 "       newTxtNode.style.fontSize = '8pt';\n"
 "       newTxtNode.style.color = 'black';\n"
 "       newTxtNode.style.margin = 0 ;\n"
-"       newTxtNode.style.transform = 'rotate(270deg)';\n"
+"       newTxtNode.style.transform = 'rotate(320deg)';\n"
 
 "       var txtNode = document.createTextNode('' + rainFall );\n"
 
