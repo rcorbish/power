@@ -102,13 +102,17 @@ int main( int argc, char **argv ) {
                 }
                 sleep( args.minutesToSprinkle * 60 ) ;
             }
-
-            while( on ) {
-                con.set( args.device, false ) ;
-                on = con.get( args.device ) ;
-                sleep( 1 ) ;
-            } 
         }
+
+        if( args.verbose ) {
+            std::cout << getTime() << "Forcing device to off " << std::endl ;
+        }
+
+        while( on ) {
+            con.set( args.device, false ) ;
+            on = con.get( args.device ) ;
+            sleep( 1 ) ;
+        } 
         if( args.verbose ) {
             std::cout << getTime() << "Program ended" << std::endl ;
         }
