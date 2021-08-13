@@ -80,8 +80,8 @@ int main( int argc, char **argv ) {
 	        sleep( 5 ) ;
         }
 
+        bool on = con.get( args.device ) ;
         if( args.verbose ) {
-            bool on = con.get( args.device ) ;
             if( on == turnDeviceOn ) {
                 std::cout << getTime() << "Device is already " << (on?"ON":"OFF") << std::endl ;
             } else {
@@ -90,18 +90,24 @@ int main( int argc, char **argv ) {
         }
 
         if( !args.test ) {
-            bool on = con.get( args.device ) ;
-            while( on != turnDeviceOn ) {https://localhost:8111/history
+            if( turnDeviceOn ) {
+                while( !on ) {
+                    con.set( args.device, true ) ;
+                    on = con.get( args.device ) ;
+                    sleep( 1 ) ;
+                } 
+
                 if( args.verbose ) {
                     std::cout << getTime() << "Sprinkling for " << args.minutesToSprinkle << " minutes." << std::endl ;
                 }
                 sleep( args.minutesToSprinkle * 60 ) ;
-                do {
-                    con.set( args.device, false ) ;
-                    on = con.get( args.device ) ;
-                    sleep( 1 ) ;
-                } while( on ) ;
             }
+
+            while( on ) {
+                con.set( args.device, false ) ;
+                on = con.get( args.device ) ;
+                sleep( 1 ) ;
+            } 
         }
         if( args.verbose ) {
             std::cout << getTime() << "Program ended" << std::endl ;
