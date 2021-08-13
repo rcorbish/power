@@ -121,10 +121,10 @@ const char *WebPageSource =
 
 "       var newTxtNode = document.createElement('div');\n"
 "       newTxtNode.style.bottom = '20px';\n"
+"       newTxtNode.style.left = '5px';\n"
 "       newTxtNode.style.position = 'absolute';\n"
 "       newTxtNode.style.fontSize = '8pt';\n"
 "       newTxtNode.style.color = 'black';\n"
-"       newTxtNode.style.margin = 0 ;\n"
 "       newTxtNode.style.transform = 'rotate(320deg)';\n"
 
 "       var txtNode = document.createTextNode('' + rainFall );\n"
