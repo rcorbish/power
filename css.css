@@ -1,0 +1,27 @@
+
+.rainfallBar {
+       margin: 10px ;
+       width: 45px ;
+       position: relative ;
+       display: inline-block ;
+       vertical-align: bottom ;
+       background-color: cyan ;
+}
+
+.rainfallTxt {
+       bottom: 20px ;
+       left: 5px ;
+       position: absolute ;
+       font-size: 8pt ;
+       color: black ;
+       transform: rotate(320deg) ;
+}
+
+.rainfallDate {
+   bottom: -20px ;
+   left: -5px ;
+   position: absolute ;
+   font-size: 8pt ;
+   color: navy ;
+   transform: rotate(320deg) ;
+}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='utf-8'/>
+<link rel='shortcut icon' href='data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA/4QAAOvl3wDy7+sAz8a8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABEAARAAEQAAEQABEAARAAAAAAAAAAAAAAEQABEAARAAARAAEQABEAAAAAAAAAAABEQENENEQABEREREREQkQEI0REJENERERERCRENEREQERERDREJEAABCNEQkREAABEREREJEQAAENEBCRENAAABEQERARAAAAAAABEAAAADOcwAAznMAAP//AADnOQAA5zkAAP//AACIBwAAAAEAAAAAAAAAAAAAgAMAAMAHAACABwAAhAcAAMRPAAD+fwAA' type='image/x-icon'>
+<link rel='stylesheet' href='css.css'>
+<script>
+
+function reqListener () {
+   var data = JSON.parse(this.responseText);
+   var div = document.getElementById( 'rainfall' );
+   for( var i=0 ; i<data.history.length ; i++ ) {
+       var history = data.history[i] ;
+
+       var when = new Date( 1000 * history.time )
+       var newDateNode = document.createElement('div');
+       newDateNode.className = 'rainfallDate' ;        
+       var dateText = document.createTextNode( when.toLocaleDateString() );
+    
+       var rainFall = history.rain ;
+       var ht = (5*rainFall);
+       ht = ht>199 ? 199 : ht ;
+       var height = '' + ht + 'px';
+
+       var newNode = document.createElement('div');
+       newNode.className = 'rainfallBar' ;
+       newNode.style.height = height ;
+
+       var newTxtNode = document.createElement('div');
+       newTxtNode.className = 'rainfallTxt' ;
+
+       var txtNode = document.createTextNode('' + rainFall );
+
+       newDateNode.appendChild( dateText );       
+       newTxtNode.appendChild( txtNode );
+       newNode.appendChild( newTxtNode );
+       newNode.appendChild( newDateNode );
+       div.appendChild( newNode );
+   }
+}
+
+function document_loaded() {
+   var oReq = new XMLHttpRequest();
+   oReq.addEventListener('load', reqListener);
+   oReq.open('GET', 'history');
+   oReq.send();
+}
+
+window.addEventListener('load', document_loaded);
+
+</script>
+
+</head>
+<body>
+
+Rainfall
+<div id='rainfall' style='height:250px;overflow:hidden;'>
+</div>
+
+</body>
+</html>

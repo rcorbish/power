@@ -13,6 +13,9 @@ static const char *KeyFileName = "key.pem" ;
 extern const char *WebPageSource ;
 
 struct mg_tls_opts tls_opts ;
+struct mg_http_serve_opts html_opts ;
+struct mg_http_serve_opts css_opts ;
+struct mg_http_message home ;
 
 void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data) ;
 std::string parseFile( const char* fileName ) ;
@@ -25,6 +28,16 @@ int main(int argc, char *argv[]) {
     memset( &tls_opts, 0, sizeof(tls_opts) ) ;
     tls_opts.cert = (argc>2) ? argv[2] : (char*)CertFileName ;
     tls_opts.certkey = (argc>3) ? argv[3] : (char*)KeyFileName ;
+
+    memset( &html_opts, 0, sizeof(html_opts) ) ;
+    html_opts.mime_types = "html=text/html" ;
+    html_opts.extra_headers = "Content-Type: text/html\nServer: Sprinklers\r\n" ;
+
+    memset( &css_opts, 0, sizeof(css_opts) ) ;
+    css_opts.mime_types = "html=text/css" ;
+    css_opts.extra_headers = "Content-Type: text/css\nServer: Sprinklers\r\n" ;
+
+    memset( &home, 0, sizeof(home) ) ;
 
     struct mg_mgr mgr;
     struct mg_connection *nc;
@@ -58,7 +71,9 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
             std::string s = parseFile( (const char *)fn_data) ;
             mg_http_reply(nc, 200, "Content-Type: application/json\nServer: Sprinklers\r\n", "%s", s.c_str() ) ;
         } else if( mg_http_match_uri(msg, "/home" ) ) {
-            mg_http_reply(nc, 200, "Content-Type: text/html\nServer: Sprinklers\r\n", "%s", WebPageSource ) ;
+            mg_http_serve_file( nc, &home, "home.html", &html_opts ) ;
+        } else if( mg_http_match_uri(msg, "/css.css" ) ) {
+            mg_http_serve_file( nc, &home, "css.css", &css_opts ) ;
         } else {
             char addr_buf[128] ;
             const char * remote_addr = mg_ntoa( &nc->peer, addr_buf, sizeof(addr_buf) ) ;          
@@ -91,67 +106,3 @@ std::string parseFile( const char *historyFileName ) {
     buf << "]}" ;
     return buf.str() ;
 }
-
-const char *WebPageSource = 
-"<!DOCTYPE html>\n"
-"<html>\n"
-"<head>\n"
-"<meta charset='utf-8'/>\n"
-"<link rel='shortcut icon' href='data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA/4QAAOvl3wDy7+sAz8a8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABEAARAAEQAAEQABEAARAAAAAAAAAAAAAAEQABEAARAAARAAEQABEAAAAAAAAAAABEQENENEQABEREREREQkQEI0REJENERERERCRENEREQERERDREJEAABCNEQkREAABEREREJEQAAENEBCRENAAABEQERARAAAAAAABEAAAADOcwAAznMAAP//AADnOQAA5zkAAP//AACIBwAAAAEAAAAAAAAAAAAAgAMAAMAHAACABwAAhAcAAMRPAAD+fwAA' type='image/x-icon'>\n"
-
-"<script>\n"
-
-"function reqListener () {\n"
-"   var data = JSON.parse(this.responseText);\n"
-"   var div = document.getElementById( 'rainfall' );\n"
-"   for( var i=0 ; i<data.history.length ; i++ ) {\n"
-"       var rainFall = data.history[i].rain ;\n"
-"       var ht = (5*rainFall);\n"
-"       ht = ht>199 ? 199 : ht ;\n"
-"       var height = '' + ht + 'px';\n"
-
-"       var newNode = document.createElement('div');\n"
-"       newNode.style.margin = '10px' ;\n"
-"       newNode.style.height = height;\n"
-"       newNode.style.width = '45px';\n"
-"       newNode.style.position = 'relative';\n"
-"       newNode.style.display = 'inline-block';\n"
-"       newNode.style.verticalAlign = 'bottom';\n"
-"       newNode.style.backgroundColor = 'cyan';\n"
-
-"       var newTxtNode = document.createElement('div');\n"
-"       newTxtNode.style.bottom = '20px';\n"
-"       newTxtNode.style.left = '5px';\n"
-"       newTxtNode.style.position = 'absolute';\n"
-"       newTxtNode.style.fontSize = '8pt';\n"
-"       newTxtNode.style.color = 'black';\n"
-"       newTxtNode.style.transform = 'rotate(320deg)';\n"
-
-"       var txtNode = document.createTextNode('' + rainFall );\n"
-
-"       newTxtNode.appendChild( txtNode );\n"
-"       newNode.appendChild( newTxtNode );\n"
-"       div.appendChild( newNode );\n"
-"   }\n"
-"}\n"
-
-"function document_loaded() {\n"
-"   var oReq = new XMLHttpRequest();\n"
-"   oReq.addEventListener('load', reqListener);\n"
-"   oReq.open('GET', 'history');\n"
-"   oReq.send();\n"
-"}\n"
-
-"window.addEventListener('load', document_loaded);\n"
-
-"</script>\n"
-
-"</head>\n"
-"<body>\n"
-
-"<div id='rainfall' style='height:250px;overflow:hidden;'>\n"
-"</div>\n"
-
-"</body>\n"
-"</html>\n"
-;
