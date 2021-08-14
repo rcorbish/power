@@ -13,3 +13,4 @@ webserver
 *.a
 *.dat
 *.log
+*.pem
