@@ -5,7 +5,14 @@
        position: relative ;
        display: inline-block ;
        vertical-align: bottom ;
-       background-color: cyan ;
+       background-color: lightgray ;
+}
+
+.rainfallBar >  img {
+	top : -70px ;
+       left: 10px ;
+       position: absolute ;
+
 }
 
 .rainfallTxt {

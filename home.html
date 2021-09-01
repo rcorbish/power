@@ -23,6 +23,7 @@ function reqListener () {
        var height = '' + ht + 'px';
 
        var newNode = document.createElement('div');
+
        newNode.className = 'rainfallBar' ;
        newNode.style.height = height ;
 
@@ -31,6 +32,11 @@ function reqListener () {
 
        var txtNode = document.createTextNode('' + rainFall );
 
+       if ( history.duration>0 ) {
+        var sprinkled = document.createElement( 'img' ) ;
+        sprinkled.src= 'data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA/4QAAOvl3wDy7+sAz8a8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABEAARAAEQAAEQABEAARAAAAAAAAAAAAAAEQABEAARAAARAAEQABEAAAAAAAAAAABEQENENEQABEREREREQkQEI0REJENERERERCRENEREQERERDREJEAABCNEQkREAABEREREJEQAAENEBCRENAAABEQERARAAAAAAABEAAAADOcwAAznMAAP//AADnOQAA5zkAAP//AACIBwAAAAEAAAAAAAAAAAAAgAMAAMAHAACABwAAhAcAAMRPAAD+fwAA' ;
+	newNode.appendChild( sprinkled ) ;
+       }
        newDateNode.appendChild( dateText );       
        newTxtNode.appendChild( txtNode );
        newNode.appendChild( newTxtNode );

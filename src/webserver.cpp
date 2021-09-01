@@ -8,8 +8,8 @@
 #include "History.hpp"
 
 static const char *s_http_port = "https://0.0.0.0:8111";
-static const char *CertFileName = "cert.pem" ;
-static const char *KeyFileName = "key.pem" ;
+static const char *CertFileName = "fullchain.pem" ;
+static const char *KeyFileName = "privkey.pem" ;
 extern const char *WebPageSource ;
 
 struct mg_tls_opts tls_opts ;
