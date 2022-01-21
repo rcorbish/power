@@ -74,6 +74,8 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
             mg_http_serve_file( nc, &home, "home.html", &html_opts ) ;
         } else if( mg_http_match_uri(msg, "/css.css" ) ) {
             mg_http_serve_file( nc, &home, "css.css", &css_opts ) ;
+        } else if( mg_http_match_uri(msg, "/favicon.ico" ) ) {
+            mg_http_reply(nc, 400, nullptr, "Code:Xenon" ) ;
         } else {
             char addr_buf[128] ;
             const char * remote_addr = mg_ntoa( &nc->peer, addr_buf, sizeof(addr_buf) ) ;          
