@@ -17,9 +17,9 @@ make
 ```sudo apt-get install certbot```
 #### Create certificates
 ```sudo certbot certonly --standalone```
-Then follow instructions: define your web server domain <web-domain>
+Then follow instructions: define your web server domain &lt;web-domain&gt;
 
 ### Run webserver
 
-<path-to>/webserver <log-file> /etc/letsencrypt/live/<web-domain>/fullchain.pem /etc/letsencrypt/live/<web-domain>/privkey.pem
+&lt;path-to&gt;webserver &lt;log-file&gt; /etc/letsencrypt/live/&lt;web-domain&gt;fullchain.pem /etc/letsencrypt/live/&lt;web-domain&gt;privkey.pem
 
