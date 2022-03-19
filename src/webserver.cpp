@@ -15,6 +15,7 @@ extern const char *WebPageSource ;
 struct mg_tls_opts tls_opts ;
 struct mg_http_serve_opts html_opts ;
 struct mg_http_serve_opts css_opts ;
+struct mg_http_serve_opts pdf_opts ;
 struct mg_http_message home ;
 
 void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data) ;
@@ -36,6 +37,10 @@ int main(int argc, char *argv[]) {
     memset( &css_opts, 0, sizeof(css_opts) ) ;
     css_opts.mime_types = "html=text/css" ;
     css_opts.extra_headers = "Content-Type: text/css\nServer: Sprinklers\r\n" ;
+
+    memset( &pdf_opts, 0, sizeof(pdf_opts) ) ;
+    pdf_opts.mime_types = "html=application/pdf" ;
+    pdf_opts.extra_headers = "Content-Type: application/pdf\nServer: Sprinklers\r\n" ;
 
     memset( &home, 0, sizeof(home) ) ;
 
@@ -74,6 +79,8 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
             mg_http_serve_file( nc, &home, "home.html", &html_opts ) ;
         } else if( mg_http_match_uri(msg, "/css.css" ) ) {
             mg_http_serve_file( nc, &home, "css.css", &css_opts ) ;
+        } else if( mg_http_match_uri(msg, "/tax" ) ) {
+            mg_http_serve_file( nc, &home, "rbc.pdf", &pdf_opts ) ;
         } else if( mg_http_match_uri(msg, "/favicon.ico" ) ) {
             mg_http_reply(nc, 400, nullptr, "Code:Xenon" ) ;
         } else {
