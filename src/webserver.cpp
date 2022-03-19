@@ -85,7 +85,7 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
             mg_http_reply(nc, 400, nullptr, "Code:Xenon" ) ;
         } else {
             char addr_buf[128] ;
-            const char * remote_addr = mg_ntoa( &nc->peer, addr_buf, sizeof(addr_buf) ) ;          
+            const char * remote_addr = mg_ntoa( &nc->rem, addr_buf, sizeof(addr_buf) ) ;          
             std::cout << "Bad call from " << remote_addr << "\n" << msg->method.ptr << std::endl ;
             mg_http_reply(nc, 400, nullptr, "" ) ;
         }

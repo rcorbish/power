@@ -32,5 +32,6 @@ class Connection {
     bool get( const std::string &deviceName ) ;
     void set( const std::string &deviceName, const bool on ) ;
     bool found( const std::string &deviceName ) ;
+    std::map<std::string, Device> list() const { return devices ; } 
 } ;
 

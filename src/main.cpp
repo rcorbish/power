@@ -34,6 +34,7 @@ typedef struct  {
     bool verbose = false ;
     int minutesToSprinkle = 45 ;
     bool test = false ;
+    bool list = false ;
     int forecastHours = 12 ;
 } Args ;
 
@@ -54,7 +55,11 @@ int main( int argc, char **argv ) {
         Connection con ; 
         con.discover() ;
 
-        if( args.state == ON ) {
+        if( args.list ) {
+            for( auto entry : con.list() ) {
+                std::cout << entry.first << std::endl ;
+            }
+        } else if( args.state == ON ) {
             turnDeviceOn = true ;
         } else if( args.state == OFF ) {
             turnDeviceOn = false ;
@@ -74,10 +79,18 @@ int main( int argc, char **argv ) {
             }
         }
 
-        for( int i=0 ; i<10 ; i++ ) {
-            if( con.found( args.device ) ) break ;
+        if( args.list ) {
             con.discover() ;
-	        sleep( 5 ) ;
+            sleep( 10 ) ;
+            for( auto entry : con.list() ) {
+                std::cout << entry.first << std::endl ;
+            }
+        } else { 
+            for( int i=0 ; i<10 ; i++ ) {
+                if( con.found( args.device ) ) break ;
+                con.discover() ;
+                sleep( 5 ) ;
+            }
         }
 
         bool on = con.get( args.device ) ;
@@ -129,6 +142,7 @@ void usage( char *argv0 ) ;
 
 constexpr struct option long_options[] = {
     {"device",  required_argument, nullptr,  'd' },
+    {"list",    no_argument,       nullptr,  'l' },
     {"zip",     required_argument, nullptr,  'z' },
     {"period",  required_argument, nullptr,  'p' },
     {"forecast",  required_argument, nullptr,  'f' },
@@ -143,7 +157,7 @@ constexpr struct option long_options[] = {
 Args parseOptions( int argc, char **argv ) {
     Args rc ;
     int opt ;
-    while( (opt = getopt_long(argc, argv, "n:p:d:z:s:m:v", long_options, nullptr )) != -1 ) {
+    while( (opt = getopt_long(argc, argv, "n:p:d:z:s:m:vtl", long_options, nullptr )) != -1 ) {
         switch (opt) {
         case 'd':
             rc.device = optarg ;
@@ -172,22 +186,26 @@ Args parseOptions( int argc, char **argv ) {
         case 't':
             rc.test = true ;
             break;
+        case 'l':
+            rc.list = true ;
+            break;
         default: /* '?' */
             usage( argv[0] ) ;
             break ;
         }
     }
 
-    if( rc.device.size() == 0 )  usage( argv[0] ) ;
-    if( rc.state == UNKNOWN && rc.zip.size() == 0 )  usage( argv[0] ) ;
+    if( rc.device.size() == 0 && !rc.list )  usage( argv[0] ) ;
+    if( rc.state == UNKNOWN && rc.zip.size() == 0 && !rc.list )  usage( argv[0] ) ;
     return rc ;
 }
 
 void usage( char *argv0 ) {
     std::cerr << "Usage:" << argv0 << " --device device --zip zip <--minutes=MMM> <--period HH> <--forecast FF> <--needed NN> <--test>" << std::endl ;
     std::cerr << "       sprinkle for MMM minutes if rain less than NN mm of rain in past HH hours plus FF forecast rain" << std::endl ;
-    std::cerr << "Usage:" << argv0 << " --device device --state on|off" << std::endl ;
     std::cerr << "       --test means show what would be done, don't change sprinklers" << std::endl ;
+    std::cerr << "Usage:" << argv0 << " --device device --state on|off" << std::endl ;
+    std::cerr << "Usage:" << argv0 << " --list" << std::endl ;
     
     exit(-1) ;
 }
