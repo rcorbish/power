@@ -18,6 +18,7 @@ struct mg_http_serve_opts css_opts ;
 struct mg_http_serve_opts pdf_opts ;
 struct mg_http_message home ;
 
+void printAddress( char *buffer, size_t buflen, mg_addr &addr ) ;
 void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data) ;
 std::string parseFile( const char* fileName ) ;
 
@@ -85,8 +86,8 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
             mg_http_reply(nc, 400, nullptr, "Code:Xenon" ) ;
         } else {
             char addr_buf[128] ;
-            const char * remote_addr = mg_ntoa( &nc->rem, addr_buf, sizeof(addr_buf) ) ;          
-            std::cout << "Bad call from " << remote_addr << "\n" << msg->method.ptr << std::endl ;
+            printAddress( addr_buf, sizeof(addr_buf), nc->rem) ;
+            std::cerr << "Bad call from " << addr_buf << "\n" << msg->method.ptr << std::endl;
             mg_http_reply(nc, 400, nullptr, "" ) ;
         }
     } else if (ev == MG_EV_ACCEPT ) {
@@ -94,6 +95,28 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
     }
 }
 
+void printAddress( char *buffer, size_t buflen, mg_addr &addr ) {
+    if( addr.is_ip6 ) {
+        snprintf(buffer, buflen, 
+                "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+                 (int)addr.ip6[0], (int)addr.ip6[1],
+                 (int)addr.ip6[2], (int)addr.ip6[3],
+                 (int)addr.ip6[4], (int)addr.ip6[5],
+                 (int)addr.ip6[6], (int)addr.ip6[7],
+                 (int)addr.ip6[8], (int)addr.ip6[9],
+                 (int)addr.ip6[10], (int)addr.ip6[11],
+                 (int)addr.ip6[12], (int)addr.ip6[13],
+                 (int)addr.ip6[14], (int)addr.ip6[15]);        
+    } else {
+        snprintf(buffer, buflen, 
+                "%d.%d.%d.%d",
+                 (int)addr.ip & 0xff,
+                 ((int)addr.ip & 0xff00) >> 8,
+                 ((int)addr.ip & 0xff0000) >> 16,
+                 ((int)addr.ip & 0xff000000) >> 24
+                 );
+    }
+}
 
 constexpr const char *LogFileName = "sprinkler.log" ;
 

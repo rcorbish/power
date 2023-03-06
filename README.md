@@ -19,7 +19,11 @@ make
 ```sudo certbot certonly --standalone```
 Then follow instructions: define your web server domain &lt;web-domain&gt;
 
+or - self-signed
+```openssl req  -nodes -new -x509 -subj "/C=/ST=/L=/O=/CN=mars" -keyout key.pem -out cert.pem```
+
 ### Run webserver
 
 &lt;path-to&gt;webserver &lt;log-file&gt; /etc/letsencrypt/live/&lt;web-domain&gt;fullchain.pem /etc/letsencrypt/live/&lt;web-domain&gt;privkey.pem
 
+```webserver log.txt cert.pem key.pem```

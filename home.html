@@ -9,40 +9,54 @@
 function reqListener () {
    var data = JSON.parse(this.responseText);
    var div = document.getElementById( 'rainfall' );
+   const tbl = document.createElement( 'table' ) 
+   const hdg = document.createElement( 'tr' ) 
+   const h_when = document.createElement( 'th' ) 
+   const t_when = document.createTextNode( 'Date' );
+   const h_past = document.createElement( 'th' ) 
+   const t_past = document.createTextNode( 'Rainfall (past 24)' );
+   const h_forc = document.createElement( 'th' ) 
+   const t_forc = document.createTextNode( 'Forecast' );
+   const h_time = document.createElement( 'th' ) 
+   const t_time = document.createTextNode( 'Sprinkle Time' );
+
+   h_when.appendChild( t_when )
+   h_past.appendChild( t_past )
+   h_forc.appendChild( t_forc )
+   h_time.appendChild( t_time )
+   hdg.appendChild( h_when )
+   hdg.appendChild( h_past )
+   hdg.appendChild( h_forc )
+   hdg.appendChild( h_time )
+   tbl.appendChild( hdg ) 
+
    for( var i=0 ; i<data.history.length ; i++ ) {
        var history = data.history[i] ;
 
        var when = new Date( 1000 * history.time )
-       var newDateNode = document.createElement('div');
-       newDateNode.className = 'rainfallDate' ;        
-       var dateText = document.createTextNode( when.toLocaleDateString() );
     
-       var rainFall = history.rain ;
-       var ht = (5*rainFall);
-       ht = ht>199 ? 199 : ht ;
-       var height = '' + ht + 'px';
+       const row = document.createElement( 'tr' ) 
+       const c_when = document.createElement( 'td' ) 
+       const x_when = document.createTextNode( when.toLocaleDateString() ) 
+       const c_past = document.createElement( 'td' ) 
+       const x_past = document.createTextNode( history.rain );
+       const c_forc = document.createElement( 'td' ) 
+       const x_forc = document.createTextNode( history.forecast );
+       const c_time = document.createElement( 'td' ) 
+       const x_time = document.createTextNode( history.duration );
 
-       var newNode = document.createElement('div');
+       c_when.appendChild( x_when )
+       c_past.appendChild( x_past )
+       c_forc.appendChild( x_forc )
+       c_time.appendChild( x_time )
+       row.appendChild( c_when )
+       row.appendChild( c_past )
+       row.appendChild( c_forc )
+       row.appendChild( c_time )
 
-       newNode.className = 'rainfallBar' ;
-       newNode.style.height = height ;
-
-       var newTxtNode = document.createElement('div');
-       newTxtNode.className = 'rainfallTxt' ;
-
-       var txtNode = document.createTextNode('' + rainFall );
-
-       if ( history.duration>0 ) {
-        var sprinkled = document.createElement( 'img' ) ;
-        sprinkled.src= 'data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA/4QAAOvl3wDy7+sAz8a8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABEAARAAEQAAEQABEAARAAAAAAAAAAAAAAEQABEAARAAARAAEQABEAAAAAAAAAAABEQENENEQABEREREREQkQEI0REJENERERERCRENEREQERERDREJEAABCNEQkREAABEREREJEQAAENEBCRENAAABEQERARAAAAAAABEAAAADOcwAAznMAAP//AADnOQAA5zkAAP//AACIBwAAAAEAAAAAAAAAAAAAgAMAAMAHAACABwAAhAcAAMRPAAD+fwAA' ;
-	newNode.appendChild( sprinkled ) ;
-       }
-       newDateNode.appendChild( dateText );       
-       newTxtNode.appendChild( txtNode );
-       newNode.appendChild( newTxtNode );
-       newNode.appendChild( newDateNode );
-       div.appendChild( newNode );
+       tbl.appendChild( row );
    }
+   div.appendChild( tbl ) 
 }
 
 function document_loaded() {
@@ -60,7 +74,7 @@ window.addEventListener('load', document_loaded);
 <body>
 
 Rainfall
-<div id='rainfall' style='height:250px;overflow:hidden;'>
+<div id='rainfall' >
 </div>
 
 </body>
