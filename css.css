@@ -32,3 +32,9 @@
    color: navy ;
    transform: rotate(320deg) ;
 }
+
+.table, .th {
+       background-color: bisque;
+       border: solid 1px navy;
+       width: 100%;
+}

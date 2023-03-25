@@ -57,13 +57,25 @@ function reqListener () {
        tbl.appendChild( row );
    }
    div.appendChild( tbl ) 
+
 }
+
+function weatherListener () {
+   var div = document.getElementById( 'weather' );
+   div.innerHTML = this.responseText;
+}
+
 
 function document_loaded() {
    var oReq = new XMLHttpRequest();
    oReq.addEventListener('load', reqListener);
    oReq.open('GET', 'history');
    oReq.send();
+
+   var oReq2 = new XMLHttpRequest();
+   oReq2.addEventListener('load', weatherListener);
+   oReq2.open('GET', 'weather');
+   oReq2.send();
 }
 
 window.addEventListener('load', document_loaded);
@@ -74,7 +86,11 @@ window.addEventListener('load', document_loaded);
 <body>
 
 Rainfall
-<div id='rainfall' >
+<div id='rainfall' >  
+</div>
+
+Weather
+<div id='weather' >  
 </div>
 
 </body>

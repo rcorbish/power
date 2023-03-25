@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "History.hpp"
+#include "Weather.hpp"
 
 static const char *s_http_port = "https://0.0.0.0:8111";
 static const char *CertFileName = "fullchain.pem" ;
@@ -21,6 +22,8 @@ struct mg_http_message home ;
 void printAddress( char *buffer, size_t buflen, mg_addr &addr ) ;
 void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data) ;
 std::string parseFile( const char* fileName ) ;
+std::string getCurrentWeather() ;
+std::string getTime() ;
 
 int main(int argc, char *argv[]) {
 
@@ -38,10 +41,6 @@ int main(int argc, char *argv[]) {
     memset( &css_opts, 0, sizeof(css_opts) ) ;
     css_opts.mime_types = "html=text/css" ;
     css_opts.extra_headers = "Content-Type: text/css\nServer: Sprinklers\r\n" ;
-
-    memset( &pdf_opts, 0, sizeof(pdf_opts) ) ;
-    pdf_opts.mime_types = "html=application/pdf" ;
-    pdf_opts.extra_headers = "Content-Type: application/pdf\nServer: Sprinklers\r\n" ;
 
     memset( &home, 0, sizeof(home) ) ;
 
@@ -76,12 +75,13 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
         if( mg_http_match_uri(msg, "/history" ) ) {
             std::string s = parseFile( (const char *)fn_data) ;
             mg_http_reply(nc, 200, "Content-Type: application/json\nServer: Sprinklers\r\n", "%s", s.c_str() ) ;
+        } else if( mg_http_match_uri(msg, "/weather" ) ) {
+            std::string s = getCurrentWeather() ;
+            mg_http_reply(nc, 200, "Content-Type: text/html\nServer: Sprinklers\r\n", "%s", s.c_str() ) ;
         } else if( mg_http_match_uri(msg, "/home" ) ) {
             mg_http_serve_file( nc, &home, "home.html", &html_opts ) ;
         } else if( mg_http_match_uri(msg, "/css.css" ) ) {
             mg_http_serve_file( nc, &home, "css.css", &css_opts ) ;
-        } else if( mg_http_match_uri(msg, "/tax" ) ) {
-            mg_http_serve_file( nc, &home, "rbc.pdf", &pdf_opts ) ;
         } else if( mg_http_match_uri(msg, "/favicon.ico" ) ) {
             mg_http_reply(nc, 400, nullptr, "Code:Xenon" ) ;
         } else {
@@ -138,4 +138,32 @@ std::string parseFile( const char *historyFileName ) {
     }
     buf << "]}" ;
     return buf.str() ;
+}
+
+
+std::string getCurrentWeather() {
+
+        std::cout << "Request to weather" << std::endl;
+        Weather weather( "31525", 24, 24 ) ;
+        weather.read() ;
+        std::cout << "Response from weather" << std::endl;
+        
+        double totalRain = weather.getRecentRainfall() ;
+        double forecastRain = weather.getForecastRainChance() ;
+        char buf[1024] ;
+        snprintf( buf, sizeof(buf),"Previous 24hrs %f<br>Forceast 24hrs %f<br>As of %s", totalRain, forecastRain, getTime().c_str() ); 
+        return std::string(buf) ;
+}
+
+std::string getTime() {
+    time_t rawtime;
+    struct tm * timeinfo;
+    char buffer [80]; 
+
+    time( &rawtime );
+    timeinfo = localtime( &rawtime ) ;
+
+    strftime (buffer,80,"%d-%b-%Y %H:%M:%S ",timeinfo);
+
+    return std::string( buffer ) ;
 }

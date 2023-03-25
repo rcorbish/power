@@ -7,7 +7,7 @@ project (power LANGUAGES CXX C)
 
 include(GNUInstallDirs)
 
-set( CMAKE_CXX_FLAGS "-std=c++17" )
+set( CMAKE_CXX_FLAGS "-std=c++20" )
 add_compile_options( -g )
 add_compile_options( -Wfatal-errors )
 
