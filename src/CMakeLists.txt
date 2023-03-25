@@ -16,6 +16,10 @@ add_executable(sprinklers main.cpp History.cpp )
 target_link_libraries( sprinklers power weather json )
 set_target_properties( sprinklers PROPERTIES  RUNTIME_OUTPUT_DIRECTORY ".." )
 
+add_executable(readweather readWeather.cpp )
+target_link_libraries( readweather weather json )
+set_target_properties( readweather PROPERTIES  RUNTIME_OUTPUT_DIRECTORY ".." )
+
 ###############################################
 # Webserver
 add_executable(webserver webserver.cpp ${MONGOOSE_SRC}/mongoose.c History.cpp )
