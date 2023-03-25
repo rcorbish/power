@@ -98,7 +98,7 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data )
 void printAddress( char *buffer, size_t buflen, mg_addr &addr ) {
     if( addr.is_ip6 ) {
         snprintf(buffer, buflen, 
-                "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+                 "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
                  (int)addr.ip6[0], (int)addr.ip6[1],
                  (int)addr.ip6[2], (int)addr.ip6[3],
                  (int)addr.ip6[4], (int)addr.ip6[5],
@@ -106,15 +106,16 @@ void printAddress( char *buffer, size_t buflen, mg_addr &addr ) {
                  (int)addr.ip6[8], (int)addr.ip6[9],
                  (int)addr.ip6[10], (int)addr.ip6[11],
                  (int)addr.ip6[12], (int)addr.ip6[13],
-                 (int)addr.ip6[14], (int)addr.ip6[15]);        
+                 (int)addr.ip6[14], (int)addr.ip6[15]
+        );        
     } else {
         snprintf(buffer, buflen, 
-                "%d.%d.%d.%d",
+                 "%d.%d.%d.%d",
                  (int)addr.ip & 0xff,
                  ((int)addr.ip & 0xff00) >> 8,
                  ((int)addr.ip & 0xff0000) >> 16,
                  ((int)addr.ip & 0xff000000) >> 24
-                 );
+        );
     }
 }
 

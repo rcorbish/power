@@ -9,6 +9,7 @@ cmake_install.cmake
 testcase
 sprinklers
 webserver
+readweather
 *.so
 *.a
 *.dat
