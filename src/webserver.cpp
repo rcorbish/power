@@ -25,6 +25,9 @@ std::string parseFile( const char* fileName ) ;
 std::string getCurrentWeather() ;
 std::string getTime() ;
 
+static long lastWeatherRead = 0L;
+static char weatherMessage[1024] ;
+
 int main(int argc, char *argv[]) {
 
     const char *historyFileName = (argc>1) ? argv[1] : HistoryLogName ;
@@ -143,16 +146,17 @@ std::string parseFile( const char *historyFileName ) {
 
 std::string getCurrentWeather() {
 
-        std::cout << "Request to weather" << std::endl;
+    long now = time(nullptr) ;
+    if( (now - lastWeatherRead ) > (60 * 30) ) {   // only read every 30 mins
+        lastWeatherRead = now ;
         Weather weather( "31525", 24, 24 ) ;
         weather.read() ;
-        std::cout << "Response from weather" << std::endl;
-        
+
         double totalRain = weather.getRecentRainfall() ;
         double forecastRain = weather.getForecastRainChance() ;
-        char buf[1024] ;
-        snprintf( buf, sizeof(buf),"Previous 24hrs %f<br>Forceast 24hrs %f<br>As of %s", totalRain, forecastRain, getTime().c_str() ); 
-        return std::string(buf) ;
+        snprintf( weatherMessage, sizeof(weatherMessage),"Previous 24hrs %f<br>Forceast 24hrs %f<br>As of %s", totalRain, forecastRain, getTime().c_str() ); 
+    }
+    return std::string(weatherMessage) ;
 }
 
 std::string getTime() {
