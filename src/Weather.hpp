@@ -13,14 +13,15 @@ class Weather {
     friend size_t WriteMemoryCallbackHistory(char *, size_t, size_t, void *) ;
     friend size_t WriteMemoryCallbackForecast(char *, size_t, size_t, void *) ;
 
-    double lon ; 
-    double lat ;
-    double totalRainFall ;
-    double forecastRainChance ;
-    long rainSince ;
-    int hoursForecast ;
-
 private :
+    double lon; 
+    double lat;
+    double totalRainFall;
+    double forecastRainChance;
+    std::string description;
+    long rainSince;
+    int hoursForecast;
+
     std::string current_url ;
     std::string history_url ;
     std::string forecast_url ;
@@ -32,9 +33,10 @@ protected:
     void parseForecast( char *contents, size_t sz ) ;
 
 public :
-    Weather( std::string zip, long pastHours, long forecastHours ) ;
+    Weather( std::string zip, long pastHours, long forecastHours );
     void init();
-    void read() ;
-    double getRecentRainfall() ;
-    double getForecastRainChance() ;
+    void read();
+    double getRecentRainfall() const;
+    double getForecastRainChance() const;
+    const std::string &getDescription() const;
 } ;
