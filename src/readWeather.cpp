@@ -36,8 +36,9 @@ int main( int argc, char **argv ) {
 
     try {
         
-        Weather weather( args.zip, args.previousHoursToLookForRain, args.forecastHours ) ;
-        weather.read() ;
+        Weather weather( args.zip, args.previousHoursToLookForRain, args.forecastHours );
+        weather.init();
+        weather.read();
         double totalRain = weather.getRecentRainfall() ;
         double forecastRain = weather.getForecastRainChance() ;
 

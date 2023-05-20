@@ -27,6 +27,7 @@ std::string getTime() ;
 
 static long lastWeatherRead = 0L;
 static char weatherMessage[1024] ;
+Weather *weather;
 
 int main(int argc, char *argv[]) {
 
@@ -46,6 +47,9 @@ int main(int argc, char *argv[]) {
     css_opts.extra_headers = "Content-Type: text/css\nServer: Sprinklers\r\n" ;
 
     memset( &home, 0, sizeof(home) ) ;
+
+    weather = new Weather( "31525", 24, 24 );
+    weather->init();
 
     struct mg_mgr mgr;
     struct mg_connection *nc;
@@ -149,11 +153,9 @@ std::string getCurrentWeather() {
     long now = time(nullptr) ;
     if( (now - lastWeatherRead ) > (60 * 30) ) {   // only read every 30 mins
         lastWeatherRead = now ;
-        Weather weather( "31525", 24, 24 ) ;
-        weather.read() ;
-
-        double totalRain = weather.getRecentRainfall() ;
-        double forecastRain = weather.getForecastRainChance() ;
+        weather->read() ;
+        double totalRain = weather->getRecentRainfall() ;
+        double forecastRain = weather->getForecastRainChance() ;
         snprintf( weatherMessage, sizeof(weatherMessage),"Previous 24hrs %f<br>Forceast 24hrs %f<br>As of %s", totalRain, forecastRain, getTime().c_str() ); 
     }
     return std::string(weatherMessage) ;

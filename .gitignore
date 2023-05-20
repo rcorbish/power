@@ -15,3 +15,7 @@ readweather
 *.dat
 *.log
 *.pem
+nodejs/
+*.crt
+*.key
+sprinklers.sh

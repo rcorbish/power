@@ -43,17 +43,19 @@ Args parseOptions( int argc, char **argv ) ;
 std::string getTime() ;
 
 
-int main( int argc, char **argv ) {
-    bool turnDeviceOn = false ;
+int main(int argc, char **argv) {
+    bool turnDeviceOn = false;
 
-    Args args = parseOptions( argc, argv ) ;
-    if( args.verbose && args.test ) {
-        std::cout << getTime() << "Test mode" << std::endl ;
+    Args args = parseOptions( argc, argv );
+    if (args.verbose && args.test) {
+        std::cout << getTime() << "Test mode" << std::endl;
     }
+    Weather weather(args.zip, args.previousHoursToLookForRain, args.forecastHours);
+    weather.init();
 
     try {
-        Connection con ; 
-        con.discover() ;
+        Connection con; 
+        con.discover();
 
         if( args.list ) {
             for( auto entry : con.list() ) {
@@ -64,7 +66,6 @@ int main( int argc, char **argv ) {
         } else if( args.state == OFF ) {
             turnDeviceOn = false ;
         } else {
-            Weather weather( args.zip, args.previousHoursToLookForRain, args.forecastHours ) ;
             weather.read() ;
             double totalRain = weather.getRecentRainfall() ;
             double forecastRain = weather.getForecastRainChance() ;

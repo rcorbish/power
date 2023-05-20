@@ -65,6 +65,11 @@ function weatherListener () {
    div.innerHTML = this.responseText;
 }
 
+function stateListener () {
+   var div = document.getElementById( 'state' );
+   div.innerHTML = this.responseText;
+}
+
 
 function document_loaded() {
    var oReq = new XMLHttpRequest();
@@ -76,6 +81,11 @@ function document_loaded() {
    oReq2.addEventListener('load', weatherListener);
    oReq2.open('GET', 'weather');
    oReq2.send();
+
+   var oReq3 = new XMLHttpRequest();
+   oReq3.addEventListener('load', stateListener);
+   oReq3.open('GET', 'state');
+   oReq3.send();
 }
 
 window.addEventListener('load', document_loaded);
@@ -91,6 +101,10 @@ Rainfall
 
 Weather
 <div id='weather' >  
+</div>
+
+Current Sprinklers
+<div id='state' >  
 </div>
 
 </body>
