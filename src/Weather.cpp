@@ -30,26 +30,26 @@ Weather::Weather( std::string zip, long pastHours, long forecastHours ) {
 
 size_t
 WriteMemoryCallbackCurrent(char *contents, size_t size, size_t nmemb, void *userp) {
-    std::string json( (char*)contents ) ;
-    Weather * self = (Weather *)userp ;
-    self->parseCurrent( (char*)contents, size * nmemb ) ;
-    return size * nmemb ;
-}
-size_t
-WriteMemoryCallbackHistory(char *contents, size_t size, size_t nmemb, void *userp) {
-    std::string json( (char*)contents ) ;
-    Weather * self = (Weather *)userp ;
-    self->parseHistory( (char*)contents, size * nmemb ) ;
-    return size * nmemb ;
+    std::string json( (char*)contents);
+    Weather * self = (Weather *)userp;
+    self->parseCurrent( (char*)contents, size * nmemb );
+    return size * nmemb;
 }
 
+size_t
+WriteMemoryCallbackHistory(char *contents, size_t size, size_t nmemb, void *userp) {
+    std::string json( (char*)contents);
+    Weather * self = (Weather *)userp;
+    self->parseHistory( (char*)contents, size * nmemb);
+    return size * nmemb;
+}
 
 size_t
 WriteMemoryCallbackForecast(char *contents, size_t size, size_t nmemb, void *userp) {
-    std::string json( (char*)contents ) ;
-    Weather * self = (Weather *)userp ;
-    self->parseForecast( (char*)contents, size * nmemb ) ;
-    return size * nmemb ;
+    std::string json( (char*)contents);
+    Weather * self = (Weather *)userp;
+    self->parseForecast( (char*)contents, size * nmemb);
+    return size * nmemb;
 }
 
 void Weather::init() {
@@ -61,22 +61,21 @@ void Weather::init() {
         sendUrlRequest( curl, current_url.c_str(), WriteMemoryCallbackCurrent ) ;
         curl_easy_cleanup(curl);
     }
-
     curl_global_cleanup() ;
 }
 
 void Weather::parseCurrent( char *contents, size_t sz ) {
-    std::stack<std::string> tags ;
-    char *p = (char*)contents ;
-    char *end = p + sz ;
+    std::stack<std::string> tags;
+    char *p = (char*)contents;
+    char *end = p + sz;
 
-    std::set<std::string> keys ;
-    keys.emplace( "coord.lon" ) ;
-    keys.emplace( "coord.lat" ) ;
+    std::set<std::string> keys;
+    keys.emplace( "coord.lon" );
+    keys.emplace( "coord.lat" );
     JsonParser parser( contents, keys ) ;
     
-    lon = parser.getNumber( "coord.lon" ) ;
-    lat = parser.getNumber( "coord.lat" ) ;
+    lon = parser.getNumber( "coord.lon" );
+    lat = parser.getNumber( "coord.lat" );
     // std::cout << lon << "," << lat << std::endl ;
 }
 
@@ -95,6 +94,9 @@ void Weather::parseHistory( char *contents, size_t sz ) {
         ssDt << "hourly[" << i << "].dt" ;
         keys.emplace( ssDt.str() ) ;
     }
+    keys.emplace("current.weather[0].description");
+    keys.emplace("current.weather[1].description");
+    keys.emplace("current.weather[2].description");
     JsonParser parser( contents, keys ) ;
 
     for( int i=0 ; i<24 ; i++ ) {
@@ -113,6 +115,9 @@ void Weather::parseHistory( char *contents, size_t sz ) {
             }
         }
     }
+    description = parser.getText("current.weather[0].description") +
+                    parser.getText("current.weather[1].description") +
+                    parser.getText("current.weather[2].description");
 }
 
 
@@ -189,12 +194,17 @@ void Weather::sendUrlRequest( void *x, const char *url, size_t (*write_callback)
 }
 
 
-double Weather::getRecentRainfall() {
-    return totalRainFall ;
+double Weather::getRecentRainfall() const {
+    return totalRainFall;
 }
 
 
-double Weather::getForecastRainChance() {
-    return forecastRainChance ;
+double Weather::getForecastRainChance() const {
+    return forecastRainChance;
 }
+
+const std::string &Weather::getDescription() const {
+    return description;
+}
+
 
