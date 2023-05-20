@@ -1,3 +1,8 @@
+body {
+font-family:arial;
+background-color:darkslategray;
+color:bisque;
+}
 
 .rainfallBar {
        margin: 10px ;
@@ -33,14 +38,12 @@
    transform: rotate(320deg) ;
 }
 
-table, tr, th {
+table, tr, th, td {
        background-color: bisque;
-       border: solid 1px navy;
-}
-td {
        border-bottom: solid 1px navy;
+       padding-right:50px;
+       color:navy;
 }
 table {
-       width: 100%;
        border-collapse:  collapse;
 }
