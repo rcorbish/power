@@ -26,6 +26,8 @@ Weather::Weather( std::string zip, long pastHours, long forecastHours ) {
 }
 
 
+
+
 size_t
 WriteMemoryCallbackCurrent(char *contents, size_t size, size_t nmemb, void *userp) {
     std::string json( (char*)contents ) ;
@@ -50,6 +52,18 @@ WriteMemoryCallbackForecast(char *contents, size_t size, size_t nmemb, void *use
     return size * nmemb ;
 }
 
+void Weather::init() {
+    CURL *curl;
+    CURLcode res;
+    curl_global_init(CURL_GLOBAL_DEFAULT) ;
+    curl = curl_easy_init();
+    if (curl) {
+        sendUrlRequest( curl, current_url.c_str(), WriteMemoryCallbackCurrent ) ;
+        curl_easy_cleanup(curl);
+    }
+
+    curl_global_cleanup() ;
+}
 
 void Weather::parseCurrent( char *contents, size_t sz ) {
     std::stack<std::string> tags ;
@@ -139,7 +153,7 @@ void Weather::read() {
     curl_global_init(CURL_GLOBAL_DEFAULT) ;
     curl = curl_easy_init();
     if (curl) {
-        sendUrlRequest( curl, current_url.c_str(), WriteMemoryCallbackCurrent ) ;
+        // sendUrlRequest( curl, current_url.c_str(), WriteMemoryCallbackCurrent ) ;
 
         time_t now = time( nullptr ) ;
         long yesterday =  now ;

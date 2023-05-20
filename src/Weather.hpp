@@ -33,6 +33,7 @@ protected:
 
 public :
     Weather( std::string zip, long pastHours, long forecastHours ) ;
+    void init();
     void read() ;
     double getRecentRainfall() ;
     double getForecastRainChance() ;

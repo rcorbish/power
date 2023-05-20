@@ -1,6 +1,8 @@
 
 #include <string.h>
 #include <iostream>
+#include <fstream>
+
 #include <math.h>
 
 #include <unistd.h>
@@ -44,7 +46,7 @@ int main( int argc, char **argv ) {
             }
         }
         if( std::abs( totalRainFall - 4.17 ) < 0.00001 ) {
-            std::cout << "Good parse - Rainfall" << std::endl ;
+            std::cout << "Good parse #1 - Rainfall" << std::endl ;
         }
 
         char s1[sizeof(TEST_JSON1)+1] ;
@@ -55,10 +57,26 @@ int main( int argc, char **argv ) {
         JsonParser parser( s1, keys ) ;
         std::string s = parser.getText( "weather[0].main" ) ;
         if( "Clear"==s ) {
-            std::cout << "Good parse - Simple" << std::endl ;
+            std::cout << "Good parse #2 - Simple" << std::endl ;
         }
 
+        auto f3 = std::ifstream( "sample3.json");
+        std::stringstream sstr;
+        while(f3 >> sstr.rdbuf());
+        char s3[sstr.str().size()+1];
+        strcpy( s3, sstr.str().c_str()); // need mutable for parsing
 
+        JsonParser parser3( s3, keys2 );
+        totalRainFall = 0 ;
+        for( auto &i : keys2 ) {
+            double mmRainfall = parser3.getNumber( i ) ;
+            if( !std::isnan(mmRainfall) ) {
+                totalRainFall += mmRainfall ;
+            }
+        }
+        if( std::abs( totalRainFall - 0.87 ) < 0.00001 ) {
+            std::cout << "Good parse #3 - Rainfall" << std::endl ;
+        }
     } catch( std::string err ) {
         std::cerr << err << std::endl ;
     }
