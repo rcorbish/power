@@ -36,5 +36,11 @@
 table, tr, th {
        background-color: bisque;
        border: solid 1px navy;
+}
+td {
+       border-bottom: solid 1px navy;
+}
+table {
        width: 100%;
+       border-collapse:  collapse;
 }
