@@ -9,46 +9,46 @@
 #include "Weather.hpp"
 
 static const char *s_http_port = "https://0.0.0.0:8111";
-static const char *CertFileName = "fullchain.pem" ;
-static const char *KeyFileName = "privkey.pem" ;
-extern const char *WebPageSource ;
+static const char *CertFileName = "fullchain.pem";
+static const char *KeyFileName = "privkey.pem";
+extern const char *WebPageSource;
 
-struct mg_tls_opts tls_opts ;
-struct mg_http_serve_opts html_opts ;
-struct mg_http_serve_opts css_opts ;
-struct mg_http_serve_opts pdf_opts ;
-struct mg_http_message home ;
+struct mg_tls_opts tls_opts;
+struct mg_http_serve_opts html_opts;
+struct mg_http_serve_opts css_opts;
+struct mg_http_serve_opts pdf_opts;
+struct mg_http_message home;
 
-void printAddress( char *buffer, size_t buflen, mg_addr &addr ) ;
-void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data) ;
-std::string parseFile( const char* fileName ) ;
-std::string getCurrentWeather() ;
-std::string getTime() ;
+void printAddress( char *buffer, size_t buflen, mg_addr &addr);
+void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data);
+std::string parseFile(const char* fileName);
+std::string getCurrentWeather();
+std::string getTime();
 
 static long lastWeatherRead = 0L;
-static char weatherMessage[1024] ;
+static char weatherMessage[1024];
 Weather *weather;
 
-int main(int argc, char *argv[]) {
+int main( int argc, char *argv[] ){
 
-    const char *historyFileName = (argc>1) ? argv[1] : HistoryLogName ;
-    std::cout << "Using history file: " << historyFileName << std::endl ;
+    const char *historyFileName = (argc>1) ? argv[1] : HistoryLogName;
+    std::cout << "Using history file: " << historyFileName << std::endl;
 
-    memset( &tls_opts, 0, sizeof(tls_opts) ) ;
-    tls_opts.cert = (argc>2) ? argv[2] : (char*)CertFileName ;
-    tls_opts.certkey = (argc>3) ? argv[3] : (char*)KeyFileName ;
+    memset( &tls_opts, 0, sizeof(tls_opts));
+    tls_opts.cert = (argc>2) ? argv[2] : (char*)CertFileName;
+    tls_opts.certkey = (argc>3) ? argv[3] : (char*)KeyFileName;
 
-    memset( &html_opts, 0, sizeof(html_opts) ) ;
-    html_opts.mime_types = "html=text/html" ;
-    html_opts.extra_headers = "Content-Type: text/html\nServer: Sprinklers\r\n" ;
+    memset( &html_opts, 0, sizeof(html_opts));
+    html_opts.mime_types = "html=text/html";
+    html_opts.extra_headers = "Content-Type: text/html\nServer: Sprinklers\r\n";
 
-    memset( &css_opts, 0, sizeof(css_opts) ) ;
-    css_opts.mime_types = "html=text/css" ;
-    css_opts.extra_headers = "Content-Type: text/css\nServer: Sprinklers\r\n" ;
+    memset( &css_opts, 0, sizeof(css_opts));
+    css_opts.mime_types = "html=text/css";
+    css_opts.extra_headers = "Content-Type: text/css\nServer: Sprinklers\r\n";
 
-    memset( &home, 0, sizeof(home) ) ;
+    memset( &home, 0, sizeof(home));
 
-    weather = new Weather( "31525", 24, 24 );
+    weather = new Weather( "31525", 24, 24);
     weather->init();
 
     struct mg_mgr mgr;
@@ -74,36 +74,36 @@ int main(int argc, char *argv[]) {
 
 
 
-void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data ) {
+void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data) {
     struct http_message *hm = (struct http_message *)ev_data;
 
     if (ev == MG_EV_HTTP_MSG) {
-        struct mg_http_message *msg = (struct mg_http_message*)ev_data ;  
+        struct mg_http_message *msg = (struct mg_http_message*)ev_data;  
         if( mg_http_match_uri(msg, "/history" ) ) {
-            std::string s = parseFile( (const char *)fn_data) ;
+            std::string s = parseFile( (const char *)fn_data);
             mg_http_reply(nc, 200, "Content-Type: application/json\nServer: Sprinklers\r\n", "%s", s.c_str() ) ;
-        } else if( mg_http_match_uri(msg, "/weather" ) ) {
-            std::string s = getCurrentWeather() ;
-            mg_http_reply(nc, 200, "Content-Type: text/html\nServer: Sprinklers\r\n", "%s", s.c_str() ) ;
-        } else if( mg_http_match_uri(msg, "/home" ) ) {
-            mg_http_serve_file( nc, &home, "home.html", &html_opts ) ;
-        } else if( mg_http_match_uri(msg, "/css.css" ) ) {
-            mg_http_serve_file( nc, &home, "css.css", &css_opts ) ;
-        } else if( mg_http_match_uri(msg, "/favicon.ico" ) ) {
-            mg_http_reply(nc, 400, nullptr, "Code:Xenon" ) ;
+        } else if( mg_http_match_uri(msg, "/weather" )){
+            std::string s = getCurrentWeather();
+            mg_http_reply(nc, 200, "Content-Type: text/html\nServer: Sprinklers\r\n", "%s", s.c_str());
+        } else if( mg_http_match_uri(msg, "/home" )){
+            mg_http_serve_file( nc, &home, "home.html", &html_opts);
+        } else if( mg_http_match_uri(msg, "/css.css")){
+            mg_http_serve_file( nc, &home, "css.css", &css_opts);
+        } else if( mg_http_match_uri(msg, "/favicon.ico")) {
+            mg_http_reply(nc, 400, nullptr, "Code:Xenon");
         } else {
-            char addr_buf[128] ;
-            printAddress( addr_buf, sizeof(addr_buf), nc->rem) ;
+            char addr_buf[256];
+            printAddress( addr_buf, sizeof(addr_buf), nc->rem);
             std::cerr << "Bad call from " << addr_buf << "\n" << msg->method.ptr << std::endl;
-            mg_http_reply(nc, 400, nullptr, "" ) ;
+            mg_http_reply(nc, 400, nullptr, "");
         }
-    } else if (ev == MG_EV_ACCEPT ) {
-        mg_tls_init( nc, &tls_opts ) ;
+    } else if (ev == MG_EV_ACCEPT) {
+        mg_tls_init( nc, &tls_opts);
     }
 }
 
-void printAddress( char *buffer, size_t buflen, mg_addr &addr ) {
-    if( addr.is_ip6 ) {
+void printAddress(char *buffer, size_t buflen, mg_addr &addr){
+    if( addr.is_ip6 ){
         snprintf(buffer, buflen, 
                  "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
                  (int)addr.ip6[0], (int)addr.ip6[1],
@@ -126,38 +126,38 @@ void printAddress( char *buffer, size_t buflen, mg_addr &addr ) {
     }
 }
 
-constexpr const char *LogFileName = "sprinkler.log" ;
+constexpr const char *LogFileName = "sprinkler.log";
 
 std::string parseFile( const char *historyFileName ) {
-    std::list<HistoryEntry> history = loadHistory( historyFileName ) ;
+    std::list<HistoryEntry> history = loadHistory( historyFileName );
 
-    std::ostringstream buf ;
+    std::ostringstream buf;
 
-    buf << "{\"history\":[" ;
+    buf << "{\"history\":[";
 
-    bool first = true ;
+    bool first = true;
     for( auto &i : history ) {
-        if( !first ) buf << "," ;
+        if( !first ) buf << ",";
         buf << "{ \"time\":" << i.eventTimes << ",\"rain\":" <<i.rainFall <<
                ",\"forecast\":" << i.forecastRain << 
-               ",\"duration\":" << i.sprinkleTime << "}" ;
-        first = false ;
+               ",\"duration\":" << i.sprinkleTime << "}";
+        first = false;
     }
-    buf << "]}" ;
-    return buf.str() ;
+    buf << "]}";
+    return buf.str();
 }
 
 
 std::string getCurrentWeather(){
-    long now = time(nullptr) ;
+    long now = time(nullptr);
     if( (now - lastWeatherRead ) > (60 * 30) ) {   // only read every 30 mins
-        lastWeatherRead = now ;
-        weather->read() ;
-        double totalRain = weather->getRecentRainfall() ;
-        double forecastRain = weather->getForecastRainChance() ;
-        snprintf( weatherMessage, sizeof(weatherMessage),"%s<br>Previous 24hrs %f<br>Forceast 24hrs %f<br>As of %s", weather->getDescription().c_str(), totalRain, forecastRain, getTime().c_str() ); 
+        lastWeatherRead = now;
+        weather->read();
+        double totalRain = weather->getRecentRainfall();
+        double forecastRain = weather->getForecastRainChance();
+        snprintf( weatherMessage, sizeof(weatherMessage),"%s<br>Previous 24hrs %f<br>Forceast 24hrs %f<br>As of %s", weather->getDescription().c_str(), totalRain, forecastRain, getTime().c_str()); 
     }
-    return std::string(weatherMessage) ;
+    return std::string(weatherMessage);
 }
 
 std::string getTime(){
@@ -166,9 +166,9 @@ std::string getTime(){
     char buffer [80]; 
 
     time( &rawtime );
-    timeinfo = localtime( &rawtime ) ;
+    timeinfo = localtime(&rawtime);
 
     strftime (buffer,80,"%d-%b-%Y %H:%M:%S ",timeinfo);
 
-    return std::string( buffer ) ;
+    return std::string(buffer);
 }

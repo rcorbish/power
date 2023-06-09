@@ -107,8 +107,11 @@ int main(int argc, char **argv) {
             if( turnDeviceOn ) {
                 while( !on ) {
                     con.set( args.device, true ) ;
+                    sleep(1);
                     on = con.get( args.device ) ;
-                    sleep( 1 ) ;
+                    if(!on) {
+                        std::cout << getTime() << "Device is not on, will retry" << std::endl ;
+                    }
                 } 
 
                 if( args.verbose ) {
@@ -121,10 +124,13 @@ int main(int argc, char **argv) {
                 std::cout << getTime() << "Forcing device to off " << std::endl ;
             }
 
-            while( on ) {
+            while(on) {
                 con.set( args.device, false ) ;
-                on = con.get( args.device ) ;
                 sleep( 1 ) ;
+                on = con.get( args.device ) ;
+                if(on) {
+                    std::cout << getTime() << "Device is still on, will retry" << std::endl ;
+                }
             } 
         }
         
