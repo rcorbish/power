@@ -161,14 +161,15 @@ void Weather::read() {
         // sendUrlRequest( curl, current_url.c_str(), WriteMemoryCallbackCurrent ) ;
 
         time_t now = time( nullptr ) ;
-        long yesterday =  now ;
-        // We'll look back 3 days of history for rainfall
-        for( int i=0 ; i<3 ; i++ ) {
+        constexpr int NUM_DAYS = 2;
+        long yesterday = now - (NUM_DAYS * 86400);
+        // We'll look back N days of history for rainfall
+        for( int i=NUM_DAYS ; i>0 ; i-- ) {
+            yesterday += 86400 ;
             std::ostringstream ss ;
             ss << history_url << "&lat=" << lat << "&lon=" << lon << "&dt=" << yesterday ;
             sendUrlRequest( curl, ss.str().c_str(), WriteMemoryCallbackHistory ) ;
 
-            yesterday -=  86400 ;
         }
 
         std::ostringstream ss ;
