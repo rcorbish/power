@@ -155,7 +155,7 @@ std::string getCurrentWeather(){
         weather->read();
         double totalRain = weather->getRecentRainfall();
         double forecastRain = weather->getForecastRainChance();
-        snprintf( weatherMessage, sizeof(weatherMessage),"%s<br>Previous 24hrs %f<br>Forceast 24hrs %f<br>As of %s", weather->getDescription().c_str(), totalRain, forecastRain, getTime().c_str()); 
+        snprintf( weatherMessage, sizeof(weatherMessage),"%s<br>Previous 48hrs %f<br>Forceast 24hrs %f<br>As of %s", weather->getDescription().c_str(), totalRain, forecastRain, getTime().c_str()); 
     }
     return std::string(weatherMessage);
 }
