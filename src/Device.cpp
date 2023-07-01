@@ -8,8 +8,12 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <chrono>
+#include <thread>
 
 #include "Device.hpp"
+
+using namespace std;
 
 void *Device::receiverThread(void *self) {
     ((Device *)self)->recvLoop();
@@ -20,8 +24,10 @@ void Device::recvLoop() {
     uint8_t msg[1024];
     for (;;) {
         int n = recvfrom(localSocket, msg, sizeof(msg), 0, nullptr, nullptr);
-        getReady = (n == 130);
-        isOn = msg[129] != 0;
+        if( n == 130 ) {
+            getReady = true;
+            isOn = msg[129] != 0;
+        }
     }
 }
 
@@ -69,7 +75,7 @@ Device::Device(const MSG408 &deviceInfo) : deviceInfo(deviceInfo) {
 }
 
 bool Device::get() {
-    getReady = 0;
+    getReady = false;
     uint8_t msg[128];
 
     uint8_t *p = msg;
@@ -118,7 +124,8 @@ bool Device::get() {
     *p++ = 0xef;
 
     sendMsg(msg, sizeof(msg));
-    while (getReady == 0) {
+    while ( !getReady ) {
+        this_thread::sleep_for(std::chrono::milliseconds(200));
     }
     return isOn;
 }

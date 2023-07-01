@@ -11,11 +11,14 @@
 #include <arpa/inet.h>
 #include <netdb.h> 
 #include <getopt.h>
+#include <chrono>
+#include <thread>
 
 #include "Connection.hpp"
 #include "Weather.hpp"
 #include "History.hpp"
 
+using namespace std;
 
 typedef enum {
     ON ,
@@ -26,8 +29,8 @@ typedef enum {
 
 
 typedef struct  {
-    std::string device ;
-    std::string zip ;
+    string device ;
+    string zip ;
     int desiredMMRain = 5 ;
     int previousHoursToLookForRain = 24 ;
     ForceState state = UNKNOWN ;
@@ -40,7 +43,7 @@ typedef struct  {
 
 
 Args parseOptions( int argc, char **argv ) ;
-std::string getTime() ;
+string getTime() ;
 
 
 int main(int argc, char **argv) {
@@ -48,7 +51,7 @@ int main(int argc, char **argv) {
 
     Args args = parseOptions( argc, argv );
     if (args.verbose && args.test) {
-        std::cout << getTime() << "Test mode" << std::endl;
+        cout << getTime() << "Test mode" << endl;
     }
     Weather weather(args.zip, args.previousHoursToLookForRain, args.forecastHours);
     weather.init();
@@ -59,7 +62,7 @@ int main(int argc, char **argv) {
 
         if( args.list ) {
             for( auto entry : con.list() ) {
-                std::cout << entry.first << std::endl ;
+                cout << entry.first << endl ;
             }
         } else if( args.state == ON ) {
             turnDeviceOn = true ;
@@ -71,7 +74,7 @@ int main(int argc, char **argv) {
             double forecastRain = weather.getForecastRainChance() ;
 
             if( args.verbose ) {
-                std::cout << getTime() << args.zip << " received " << totalRain << "mm and forecasts " << forecastRain << "mm of rain." << std::endl ;
+                cout << getTime() << args.zip << " received " << totalRain << "mm and forecasts " << forecastRain << "mm of rain." << endl ;
             }
             turnDeviceOn = (totalRain+forecastRain*.5) < args.desiredMMRain ;
             HistoryEntry he( totalRain, forecastRain, turnDeviceOn ? args.minutesToSprinkle : 0 ) ;
@@ -82,24 +85,24 @@ int main(int argc, char **argv) {
 
         if( args.list ) {
             con.discover() ;
-            sleep( 10 ) ;
+            this_thread::sleep_for(chrono::seconds(12));
             for( auto entry : con.list() ) {
-                std::cout << entry.first << std::endl ;
+                cout << entry.first << endl ;
             }
         } else { 
             for( int i=0 ; i<10 ; i++ ) {
                 if( con.found( args.device ) ) break ;
                 con.discover() ;
-                sleep( 5 ) ;
+                this_thread::sleep_for(chrono::seconds(7));
             }
         }
 
         bool on = con.get( args.device ) ;
         if( args.verbose ) {
             if( on == turnDeviceOn ) {
-                std::cout << getTime() << "Device is already " << (on?"ON":"OFF") << std::endl ;
+                cout << getTime() << "Device is already " << (on?"ON":"OFF") << endl ;
             } else {
-                std::cout << getTime() << "Need to turn device " << (turnDeviceOn?"ON":"OFF") << std::endl ;
+                cout << getTime() << "Need to turn device " << (turnDeviceOn?"ON":"OFF") << endl ;
             }
         }
 
@@ -107,38 +110,38 @@ int main(int argc, char **argv) {
             if( turnDeviceOn ) {
                 while( !on ) {
                     con.set( args.device, true ) ;
-                    sleep(1);
+                    this_thread::sleep_for(chrono::milliseconds(1500));
                     on = con.get( args.device ) ;
                     if(!on) {
-                        std::cout << getTime() << "Device is not on, will retry" << std::endl ;
+                        cout << getTime() << "Device is not on, will retry" << endl ;
                     }
                 } 
 
                 if( args.verbose ) {
-                    std::cout << getTime() << "Sprinkling for " << args.minutesToSprinkle << " minutes." << std::endl ;
+                    cout << getTime() << "Sprinkling for " << args.minutesToSprinkle << " minutes." << endl ;
                 }
-                sleep( args.minutesToSprinkle * 60 ) ;
+                this_thread::sleep_for(chrono::minutes(args.minutesToSprinkle));
             }
 
             if( args.verbose ) {
-                std::cout << getTime() << "Forcing device to off " << std::endl ;
+                cout << getTime() << "Forcing device to off " << endl ;
             }
 
             while(on) {
                 con.set( args.device, false ) ;
-                sleep( 1 ) ;
+                this_thread::sleep_for(chrono::milliseconds(1500));
                 on = con.get( args.device ) ;
                 if(on) {
-                    std::cout << getTime() << "Device is still on, will retry" << std::endl ;
+                    cout << getTime() << "Device is still on, will retry" << endl ;
                 }
             } 
         }
         
         if( args.verbose ) {
-            std::cout << getTime() << "Program ended" << std::endl ;
+            cout << getTime() << "Program ended" << endl ;
         }
-    } catch( std::string err ) {
-        std::cerr << err << std::endl ;
+    } catch( string err ) {
+        cerr << err << endl ;
         exit( -2 ) ;
     }    
     return 0 ;
@@ -208,16 +211,16 @@ Args parseOptions( int argc, char **argv ) {
 }
 
 void usage( char *argv0 ) {
-    std::cerr << "Usage:" << argv0 << " --device device --zip zip <--minutes=MMM> <--period HH> <--forecast FF> <--needed NN> <--test>" << std::endl ;
-    std::cerr << "       sprinkle for MMM minutes if rain less than NN mm of rain in past HH hours plus FF forecast rain" << std::endl ;
-    std::cerr << "       --test means show what would be done, don't change sprinklers" << std::endl ;
-    std::cerr << "Usage:" << argv0 << " --device device --state on|off" << std::endl ;
-    std::cerr << "Usage:" << argv0 << " --list" << std::endl ;
+    cerr << "Usage:" << argv0 << " --device device --zip zip <--minutes=MMM> <--period HH> <--forecast FF> <--needed NN> <--test>" << endl ;
+    cerr << "       sprinkle for MMM minutes if rain less than NN mm of rain in past HH hours plus FF forecast rain" << endl ;
+    cerr << "       --test means show what would be done, don't change sprinklers" << endl ;
+    cerr << "Usage:" << argv0 << " --device device --state on|off" << endl ;
+    cerr << "Usage:" << argv0 << " --list" << endl ;
     
     exit(-1) ;
 }
 
-std::string getTime() {
+string getTime() {
     time_t rawtime;
     struct tm * timeinfo;
     char buffer [80]; 
@@ -227,5 +230,5 @@ std::string getTime() {
 
     strftime (buffer,80,"%d-%b-%Y %H:%M:%S ",timeinfo);
 
-    return std::string( buffer ) ;
+    return string( buffer ) ;
 }
