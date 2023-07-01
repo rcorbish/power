@@ -5,6 +5,7 @@
 #define TEST_FRIENDS
 #endif
 
+#include <sstream>
 #include <string>
 
 class Weather {
@@ -18,7 +19,7 @@ private :
     double lat;
     double totalRainFall;
     double forecastRainChance;
-    std::string description;
+    std::ostringstream description;
     long rainSince;
     int hoursForecast;
 
@@ -38,5 +39,5 @@ public :
     void read();
     double getRecentRainfall() const;
     double getForecastRainChance() const;
-    const std::string &getDescription() const;
+    const std::string getDescription() const;
 } ;

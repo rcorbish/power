@@ -6,6 +6,12 @@
 #include <map>
 #include <set>
 
+enum JsonType {
+    NONE,
+    STRING,
+    NUMBER
+};
+
 class JsonParser {
     private:
         std::set<std::string> keysToFind ;
@@ -19,7 +25,7 @@ class JsonParser {
 
     public:
         JsonParser( char * json, std::set<std::string> keysToFind ) ;
-
+        bool has( std::string key ) ;
         std::string getText( std::string key ) ;
         double getNumber( std::string key ) ;
 } ;

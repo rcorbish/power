@@ -13,6 +13,11 @@ JsonParser::JsonParser( char *json, std::set<std::string> _keysToFind ) :
     parseObject( json ) ;
 }
 
+bool JsonParser::has( std::string key ) {
+    auto search = parsed.find( key ) ;
+    return( search != parsed.end() ) ;
+}
+
 std::string JsonParser::getText( std::string key ) {
     auto search = parsed.find( key ) ;
     if( search == parsed.end() ) {

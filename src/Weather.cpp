@@ -115,9 +115,14 @@ void Weather::parseHistory( char *contents, size_t sz ) {
             }
         }
     }
-    description = parser.getText("current.weather[0].description") +
-                    parser.getText("current.weather[1].description") +
-                    parser.getText("current.weather[2].description");
+    description.clear();
+    description << parser.getText("current.weather[0].description");
+    if( parser.has("current.weather[1].description") ) {
+        description << " " << parser.getText("current.weather[1].description");
+    }
+    if( parser.has("current.weather[2].description") ) {
+        description << " " << parser.getText("current.weather[2].description");
+    }
 }
 
 
@@ -194,18 +199,16 @@ void Weather::sendUrlRequest( void *x, const char *url, size_t (*write_callback)
         throw std::string( curl_easy_strerror(res) ) ;
 }
 
-
 double Weather::getRecentRainfall() const {
     return totalRainFall;
 }
-
 
 double Weather::getForecastRainChance() const {
     return forecastRainChance;
 }
 
-const std::string &Weather::getDescription() const {
-    return description;
+const std::string Weather::getDescription() const {
+    return description.str();
 }
 
 
