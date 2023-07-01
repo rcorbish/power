@@ -160,7 +160,7 @@ void Weather::read() {
     // setup accumulators
     totalRainFall = 0 ;
     forecastRainChance = 0 ;
-    description.clear();
+    description.str("");
 
     CURL *curl;
     CURLcode res;
