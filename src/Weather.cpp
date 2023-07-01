@@ -97,6 +97,8 @@ void Weather::parseHistory( char *contents, size_t sz ) {
     keys.emplace("current.weather[0].description");
     keys.emplace("current.weather[1].description");
     keys.emplace("current.weather[2].description");
+    keys.emplace("current.temp");
+    keys.emplace("current.humidity");
     JsonParser parser( contents, keys ) ;
 
     for( int i=0 ; i<24 ; i++ ) {
@@ -115,8 +117,9 @@ void Weather::parseHistory( char *contents, size_t sz ) {
             }
         }
     }
-    description.clear();
-    description << parser.getText("current.weather[0].description");
+    description << parser.getText("current.temp") << "°C " 
+                << parser.getText("current.humidity") << "% "  
+                << parser.getText("current.weather[0].description");
     if( parser.has("current.weather[1].description") ) {
         description << " " << parser.getText("current.weather[1].description");
     }
@@ -157,6 +160,7 @@ void Weather::read() {
     // setup accumulators
     totalRainFall = 0 ;
     forecastRainChance = 0 ;
+    description.clear();
 
     CURL *curl;
     CURLcode res;
@@ -166,7 +170,7 @@ void Weather::read() {
         // sendUrlRequest( curl, current_url.c_str(), WriteMemoryCallbackCurrent ) ;
 
         time_t now = time( nullptr ) ;
-        constexpr int NUM_DAYS = 2;
+        constexpr int NUM_DAYS = 1;
         long yesterday = now - (NUM_DAYS * 86400);
         // We'll look back N days of history for rainfall
         for( int i=NUM_DAYS ; i>0 ; i-- ) {
