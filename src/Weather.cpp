@@ -122,7 +122,7 @@ void Weather::parseHistory( char *contents, size_t sz ) {
     double degc = parser.getNumber("current.temp");
     double degf = degc * 9.0 / 5.0 + 32 ;
     
-    description << setprecision(1) << degc << "°C/" << degf << "°F " 
+    description << setprecision(1) << fixed << degc << "°C/" << degf << "°F " 
                 << parser.getNumber("current.humidity") << "% "  
                 << parser.getText("current.weather[0].description");
     if( parser.has("current.weather[1].description") ) {
