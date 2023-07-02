@@ -4,18 +4,20 @@
 
 #include <curl/curl.h>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <stack>
 #include <cmath>
 
 
+using namespace std;
 
-Weather::Weather( std::string zip, long pastHours, long forecastHours ) {
+Weather::Weather( string zip, long pastHours, long forecastHours ) {
     char *api_key = getenv("WEATHER_API_KEY");
     if (api_key == nullptr) {
-        throw std::string( "Missing WEATHER_API_KEY environment variable" ) ;
+        throw string( "Missing WEATHER_API_KEY environment variable" ) ;
     }
-    std::string Server( "https://api.openweathermap.org/data/2.5/" ) ;
+    string Server( "https://api.openweathermap.org/data/2.5/" ) ;
 
     current_url = Server + "weather?zip=" + zip + "&units=metric&APPID=" + api_key ;
     history_url = Server + "onecall/timemachine?units=metric&appid=" + api_key ;
@@ -30,7 +32,7 @@ Weather::Weather( std::string zip, long pastHours, long forecastHours ) {
 
 size_t
 WriteMemoryCallbackCurrent(char *contents, size_t size, size_t nmemb, void *userp) {
-    std::string json( (char*)contents);
+    string json( (char*)contents);
     Weather * self = (Weather *)userp;
     self->parseCurrent( (char*)contents, size * nmemb );
     return size * nmemb;
@@ -38,7 +40,7 @@ WriteMemoryCallbackCurrent(char *contents, size_t size, size_t nmemb, void *user
 
 size_t
 WriteMemoryCallbackHistory(char *contents, size_t size, size_t nmemb, void *userp) {
-    std::string json( (char*)contents);
+    string json( (char*)contents);
     Weather * self = (Weather *)userp;
     self->parseHistory( (char*)contents, size * nmemb);
     return size * nmemb;
@@ -46,7 +48,7 @@ WriteMemoryCallbackHistory(char *contents, size_t size, size_t nmemb, void *user
 
 size_t
 WriteMemoryCallbackForecast(char *contents, size_t size, size_t nmemb, void *userp) {
-    std::string json( (char*)contents);
+    string json( (char*)contents);
     Weather * self = (Weather *)userp;
     self->parseForecast( (char*)contents, size * nmemb);
     return size * nmemb;
@@ -65,32 +67,32 @@ void Weather::init() {
 }
 
 void Weather::parseCurrent( char *contents, size_t sz ) {
-    std::stack<std::string> tags;
+    stack<string> tags;
     char *p = (char*)contents;
     char *end = p + sz;
 
-    std::set<std::string> keys;
+    set<string> keys;
     keys.emplace( "coord.lon" );
     keys.emplace( "coord.lat" );
     JsonParser parser( contents, keys ) ;
     
     lon = parser.getNumber( "coord.lon" );
     lat = parser.getNumber( "coord.lat" );
-    // std::cout << lon << "," << lat << std::endl ;
+    // cout << lon << "," << lat << endl ;
 }
 
 
 void Weather::parseHistory( char *contents, size_t sz ) {
-    std::stack<std::string> tags ;
+    stack<string> tags ;
     char *p = (char*)contents ;
     char *end = p + sz ;
 
-    std::set<std::string> keys ;
+    set<string> keys ;
     for( int i=0 ; i<24 ; i++ ) {
-        std::ostringstream ssRain ;
+        ostringstream ssRain ;
         ssRain << "hourly[" << i << "].rain.1h" ;
         keys.emplace( ssRain.str() ) ;
-        std::ostringstream ssDt ;
+        ostringstream ssDt ;
         ssDt << "hourly[" << i << "].dt" ;
         keys.emplace( ssDt.str() ) ;
     }
@@ -102,24 +104,25 @@ void Weather::parseHistory( char *contents, size_t sz ) {
     JsonParser parser( contents, keys ) ;
 
     for( int i=0 ; i<24 ; i++ ) {
-        std::ostringstream ssDt ;
+        ostringstream ssDt ;
         ssDt << "hourly[" << i << "].dt" ;
         keys.emplace( ssDt.str() ) ;
         double date = parser.getNumber( ssDt.str() ) ;
         if( date > rainSince ) {    // only consider past 48 hours
-            std::ostringstream ssRain ;
+            ostringstream ssRain ;
             ssRain << "hourly[" << i << "].rain.1h" ;
             keys.emplace( ssRain.str() ) ;
 
             double mmRainfall = parser.getNumber( ssRain.str() ) ;
-            if( !std::isnan(mmRainfall) ) {
+            if( !isnan(mmRainfall) ) {
                 totalRainFall += mmRainfall ;
             }
         }
     }
     double degc = parser.getNumber("current.temp");
     double degf = degc * 9.0 / 5.0 + 32 ;
-    description << degc << "°C/" << degf << "°F " 
+    
+    description << setprecision(1) << degc << "°C/" << degf << "°F " 
                 << parser.getNumber("current.humidity") << "% "  
                 << parser.getText("current.weather[0].description");
     if( parser.has("current.weather[1].description") ) {
@@ -132,14 +135,14 @@ void Weather::parseHistory( char *contents, size_t sz ) {
 
 
 void Weather::parseForecast( char *contents, size_t sz ) {
-    std::stack<std::string> tags ;
+    stack<string> tags ;
     char *p = (char*)contents ;
     char *end = p + sz ;
    
 
-    std::set<std::string> keys ;
+    set<string> keys ;
     for( int i=0 ; i<hoursForecast ; i++ ) {
-        std::ostringstream ssRainPctChange ;
+        ostringstream ssRainPctChange ;
         ssRainPctChange << "hourly[" << i << "].pop" ;
         keys.emplace( ssRainPctChange.str() ) ;
     }
@@ -147,11 +150,11 @@ void Weather::parseForecast( char *contents, size_t sz ) {
     JsonParser parser( contents, keys ) ;
 
     for( int i=0 ; i<hoursForecast ; i++ ) {
-        std::ostringstream ssRainPctChange ;
+        ostringstream ssRainPctChange ;
         ssRainPctChange << "hourly[" << i << "].pop" ;
 
         double chanceOfRain = parser.getNumber( ssRainPctChange.str() ) ;
-        if( !std::isnan(chanceOfRain) ) {
+        if( !isnan(chanceOfRain) ) {
             forecastRainChance += chanceOfRain ;
         }
     }
@@ -177,13 +180,13 @@ void Weather::read() {
         // We'll look back N days of history for rainfall
         for( int i=NUM_DAYS ; i>0 ; i-- ) {
             yesterday += 86400 ;
-            std::ostringstream ss ;
+            ostringstream ss ;
             ss << history_url << "&lat=" << lat << "&lon=" << lon << "&dt=" << yesterday ;
             sendUrlRequest( curl, ss.str().c_str(), WriteMemoryCallbackHistory ) ;
 
         }
 
-        std::ostringstream ss ;
+        ostringstream ss ;
         ss << forecast_url << "&lat=" << lat << "&lon=" << lon ;
         sendUrlRequest( curl, ss.str().c_str(), WriteMemoryCallbackForecast ) ;
 
@@ -202,7 +205,7 @@ void Weather::sendUrlRequest( void *x, const char *url, size_t (*write_callback)
     CURLcode res = curl_easy_perform(curl);
     /* Check for errors */
     if (res != CURLE_OK)
-        throw std::string( curl_easy_strerror(res) ) ;
+        throw string( curl_easy_strerror(res) ) ;
 }
 
 double Weather::getRecentRainfall() const {
@@ -213,7 +216,7 @@ double Weather::getForecastRainChance() const {
     return forecastRainChance;
 }
 
-const std::string Weather::getDescription() const {
+const string Weather::getDescription() const {
     return description.str();
 }
 
