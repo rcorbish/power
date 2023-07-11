@@ -179,11 +179,10 @@ void Weather::read() {
         long yesterday = now - (NUM_DAYS * 86400);
         // We'll look back N days of history for rainfall
         for( int i=NUM_DAYS ; i>0 ; i-- ) {
-            yesterday += 86400 ;
             ostringstream ss ;
             ss << history_url << "&lat=" << lat << "&lon=" << lon << "&dt=" << yesterday ;
             sendUrlRequest( curl, ss.str().c_str(), WriteMemoryCallbackHistory ) ;
-
+            yesterday += 86400 ;
         }
 
         ostringstream ss ;
