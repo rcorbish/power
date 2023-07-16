@@ -10,7 +10,7 @@
 
 class Weather {
     TEST_FRIENDS 
-    friend size_t WriteMemoryCallbackCurrent(char *, size_t, size_t, void *) ;
+    friend size_t WriteMemoryCallbackLocation(char *, size_t, size_t, void *) ;
     friend size_t WriteMemoryCallbackHistory(char *, size_t, size_t, void *) ;
     friend size_t WriteMemoryCallbackForecast(char *, size_t, size_t, void *) ;
 
@@ -23,13 +23,13 @@ private :
     long rainSince;
     int hoursForecast;
 
-    std::string current_url ;
+    std::string location_url ;
     std::string history_url ;
     std::string forecast_url ;
     void sendUrlRequest( void *curl, const char *url, size_t (*write_callback)(char *ptr, size_t size, size_t nmemb, void *userdata) ) ;
 
 protected:
-    void parseCurrent( char *contents, size_t sz ) ;
+    void parseLocation( char *contents, size_t sz ) ;
     void parseHistory( char *contents, size_t sz ) ;
     void parseForecast( char *contents, size_t sz ) ;
 

@@ -8,6 +8,7 @@
 #include <sstream>
 #include <stack>
 #include <cmath>
+#include <vector>
 
 
 using namespace std;
@@ -17,11 +18,11 @@ Weather::Weather( string zip, long pastHours, long forecastHours ) {
     if (api_key == nullptr) {
         throw string( "Missing WEATHER_API_KEY environment variable" ) ;
     }
-    string Server( "https://api.openweathermap.org/data/2.5/" ) ;
+    string Server( "https://api.openweathermap.org/" ) ;
 
-    current_url = Server + "weather?zip=" + zip + "&units=metric&APPID=" + api_key ;
-    history_url = Server + "onecall/timemachine?units=metric&appid=" + api_key ;
-    forecast_url = Server + "onecall?units=metric&exclude=current,minutely,daily,alerts&APPID=" + api_key ;
+    location_url = Server + "geo/1.0/zip?zip=" + zip + "&APPID=" + api_key;
+    history_url = Server + "data/2.5/onecall/timemachine?units=metric&appid=" + api_key;
+    forecast_url = Server + "data/2.5/onecall?units=metric&exclude=current,minutely,daily,alerts&APPID=" + api_key;
 
     rainSince = time( nullptr ) - ( pastHours * 3600 ) ;
     hoursForecast = forecastHours ;
@@ -31,10 +32,10 @@ Weather::Weather( string zip, long pastHours, long forecastHours ) {
 
 
 size_t
-WriteMemoryCallbackCurrent(char *contents, size_t size, size_t nmemb, void *userp) {
+WriteMemoryCallbackLocation(char *contents, size_t size, size_t nmemb, void *userp) {
     string json( (char*)contents);
     Weather * self = (Weather *)userp;
-    self->parseCurrent( (char*)contents, size * nmemb );
+    self->parseLocation( (char*)contents, size * nmemb );
     return size * nmemb;
 }
 
@@ -60,24 +61,24 @@ void Weather::init() {
     curl_global_init(CURL_GLOBAL_DEFAULT) ;
     curl = curl_easy_init();
     if (curl) {
-        sendUrlRequest( curl, current_url.c_str(), WriteMemoryCallbackCurrent ) ;
+        sendUrlRequest( curl, location_url.c_str(), WriteMemoryCallbackLocation ) ;
         curl_easy_cleanup(curl);
     }
     curl_global_cleanup() ;
 }
 
-void Weather::parseCurrent( char *contents, size_t sz ) {
+void Weather::parseLocation( char *contents, size_t sz ) {
     stack<string> tags;
     char *p = (char*)contents;
     char *end = p + sz;
 
     set<string> keys;
-    keys.emplace( "coord.lon" );
-    keys.emplace( "coord.lat" );
+    keys.emplace( "lon" );
+    keys.emplace( "lat" );
     JsonParser parser( contents, keys ) ;
     
-    lon = parser.getNumber( "coord.lon" );
-    lat = parser.getNumber( "coord.lat" );
+    lon = parser.getNumber( "lon" );
+    lat = parser.getNumber( "lat" );
     // cout << lon << "," << lat << endl ;
 }
 
@@ -87,15 +88,19 @@ void Weather::parseHistory( char *contents, size_t sz ) {
     char *p = (char*)contents ;
     char *end = p + sz ;
 
-    set<string> keys ;
+    vector<string> rainKeys;
+    vector<string> timeKeys;
     for( int i=0 ; i<24 ; i++ ) {
         ostringstream ssRain ;
         ssRain << "hourly[" << i << "].rain.1h" ;
-        keys.emplace( ssRain.str() ) ;
+        rainKeys.emplace_back( ssRain.str() ) ;
         ostringstream ssDt ;
         ssDt << "hourly[" << i << "].dt" ;
-        keys.emplace( ssDt.str() ) ;
+        timeKeys.emplace_back( ssDt.str() ) ;
     }
+    set<string> keys(rainKeys.begin(), rainKeys.end());
+    keys.insert(timeKeys.begin(), timeKeys.end());
+
     keys.emplace("current.weather[0].description");
     keys.emplace("current.weather[1].description");
     keys.emplace("current.weather[2].description");
@@ -104,16 +109,9 @@ void Weather::parseHistory( char *contents, size_t sz ) {
     JsonParser parser( contents, keys ) ;
 
     for( int i=0 ; i<24 ; i++ ) {
-        ostringstream ssDt ;
-        ssDt << "hourly[" << i << "].dt" ;
-        keys.emplace( ssDt.str() ) ;
-        double date = parser.getNumber( ssDt.str() ) ;
-        if( date > rainSince ) {    // only consider past 48 hours
-            ostringstream ssRain ;
-            ssRain << "hourly[" << i << "].rain.1h" ;
-            keys.emplace( ssRain.str() ) ;
-
-            double mmRainfall = parser.getNumber( ssRain.str() ) ;
+        double date = parser.getNumber( timeKeys[i] ) ;
+        if( date >= rainSince ) {    // only consider past 48 hours
+            double mmRainfall = parser.getNumber( rainKeys[i] ) ;
             if( !isnan(mmRainfall) ) {
                 totalRainFall += mmRainfall ;
             }
@@ -172,8 +170,6 @@ void Weather::read() {
     curl_global_init(CURL_GLOBAL_DEFAULT) ;
     curl = curl_easy_init();
     if (curl) {
-        // sendUrlRequest( curl, current_url.c_str(), WriteMemoryCallbackCurrent ) ;
-
         time_t now = time( nullptr ) ;
         constexpr int NUM_DAYS = 1;
         long yesterday = now - (NUM_DAYS * 86400);
