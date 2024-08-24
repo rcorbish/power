@@ -21,6 +21,7 @@ FetchContent_MakeAvailable( mongoose )
 set( MONGOOSE_SRC ${FETCHCONTENT_BASE_DIR}/mongoose-src )
 
 find_package(OpenSSL)
+find_package(jsoncpp REQUIRED)
 
 subdirs(src)
 subdirs(tst)

@@ -1,5 +1,4 @@
 
-#include "JsonParser.hpp"
 #include "Weather.hpp"
 
 #include <curl/curl.h>
@@ -10,13 +9,16 @@
 #include <cmath>
 #include <vector>
 
+#include <jsoncpp/json/json.h>
+
 
 using namespace std;
 
 Weather::Weather( string zip, long pastHours, long forecastHours ) {
     char *api_key = getenv("WEATHER_API_KEY");
     if (api_key == nullptr) {
-        throw string( "Missing WEATHER_API_KEY environment variable" ) ;
+        cerr <<"Missing WEATHER_API_KEY environment variable" << endl;
+        exit(-1);
     }
     string Server( "https://api.openweathermap.org/" ) ;
 
@@ -70,99 +72,62 @@ void Weather::init() {
 void Weather::parseLocation( char *contents, size_t sz ) {
     stack<string> tags;
     char *p = (char*)contents;
-    char *end = p + sz;
-
-    set<string> keys;
-    keys.emplace( "lon" );
-    keys.emplace( "lat" );
-    JsonParser parser( contents, keys ) ;
-    
-    lon = parser.getNumber( "lon" );
-    lat = parser.getNumber( "lat" );
-    // cout << lon << "," << lat << endl ;
+    Json::Reader reader;
+    Json::Value root;
+    bool parsingSuccessful = reader.parse( p, root );
+    if( !parsingSuccessful ) {
+        cerr << "Failed to parse json read\n" << p << endl;
+    }
+    lon = root["lon"].asDouble();
+    lat = root["lat"].asDouble();
+    cout << lon << "," << lat << endl ;
 }
 
 
 void Weather::parseHistory( char *contents, size_t sz ) {
     stack<string> tags ;
     char *p = (char*)contents ;
-    char *end = p + sz ;
-
-    vector<string> rainKeys;
-    vector<string> timeKeys;
-    for( int i=0 ; i<24 ; i++ ) {
-        ostringstream ssRain ;
-        ssRain << "hourly[" << i << "].rain.1h" ;
-        rainKeys.emplace_back( ssRain.str() ) ;
-        ostringstream ssDt ;
-        ssDt << "hourly[" << i << "].dt" ;
-        timeKeys.emplace_back( ssDt.str() ) ;
+    Json::Reader reader;
+    Json::Value root;
+    bool parsingSuccessful = reader.parse( p, root );
+    if( !parsingSuccessful ) {
+        cerr << "Failed to parse json read\n" << p << endl;
     }
-    set<string> keys(rainKeys.begin(), rainKeys.end());
-    keys.insert(timeKeys.begin(), timeKeys.end());
-
-    keys.emplace("current.weather[0].description");
-    keys.emplace("current.weather[1].description");
-    keys.emplace("current.weather[2].description");
-    keys.emplace("current.temp");
-    keys.emplace("current.humidity");
-    JsonParser parser( contents, keys ) ;
-
     for( int i=0 ; i<24 ; i++ ) {
-        double date = parser.getNumber( timeKeys[i] ) ;
-        if( date >= rainSince ) {    // only consider past 48 hours
-            double mmRainfall = parser.getNumber( rainKeys[i] ) ;
-            if( !isnan(mmRainfall) ) {
-                totalRainFall += mmRainfall ;
-            }
-        }
+        totalRainFall += root["hourly"][i]["rain"]["1h"].asDouble();
     }
-    double degc = parser.getNumber("current.temp");
-    double degf = degc * 9.0 / 5.0 + 32 ;
-    
+
+    double degc = root["current"]["temp"].asDouble();
+    double degf = degc * 9.0 / 5.0 + 32 ;    
+
     description << setprecision(1) << fixed << degc << "°C/" << degf << "°F " 
-                << parser.getNumber("current.humidity") << "% "  
-                << parser.getText("current.weather[0].description");
-    if( parser.has("current.weather[1].description") ) {
-        description << " " << parser.getText("current.weather[1].description");
-    }
-    if( parser.has("current.weather[2].description") ) {
-        description << " " << parser.getText("current.weather[2].description");
-    }
+                << root["current"]["humidity"].asDouble() << "% "
+                << root["current"]["weather"][0]["description"].asString()
+                << root["current"]["weather"][1]["description"].asString()
+                << root["current"]["weather"][2]["description"].asString();                
+    
 }
 
 
 void Weather::parseForecast( char *contents, size_t sz ) {
     stack<string> tags ;
     char *p = (char*)contents ;
-    char *end = p + sz ;
-   
-
-    set<string> keys ;
-    for( int i=0 ; i<hoursForecast ; i++ ) {
-        ostringstream ssRainPctChange ;
-        ssRainPctChange << "hourly[" << i << "].pop" ;
-        keys.emplace( ssRainPctChange.str() ) ;
+    Json::Reader reader;
+    Json::Value root;
+    bool parsingSuccessful = reader.parse( p, root );
+    if( !parsingSuccessful ) {
+        cerr << "Failed to parse json read\n" << p << endl;
     }
-
-    JsonParser parser( contents, keys ) ;
-
-    for( int i=0 ; i<hoursForecast ; i++ ) {
-        ostringstream ssRainPctChange ;
-        ssRainPctChange << "hourly[" << i << "].pop" ;
-
-        double chanceOfRain = parser.getNumber( ssRainPctChange.str() ) ;
-        if( !isnan(chanceOfRain) ) {
-            forecastRainChance += chanceOfRain ;
-        }
-    }
+    for( int i=0 ; i<24 ; i++ ) {
+        forecastRainChance += root["hourly"][i]["rain"]["1h"].asDouble();
+    }   
 }
 
 
 void Weather::read() {
     // setup accumulators
-    totalRainFall = 0 ;
-    forecastRainChance = 0 ;
+    forecastRainChance = 0;
+    totalRainFall = 0;
     description.str("");
 
     CURL *curl;

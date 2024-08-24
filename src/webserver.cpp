@@ -9,8 +9,8 @@
 #include "Weather.hpp"
 
 static const char *s_http_port = "https://0.0.0.0:8111";
-static const char *CertFileName = "fullchain.pem";
-static const char *KeyFileName = "privkey.pem";
+static const char *CertFileName = "cert.pem";
+static const char *KeyFileName = "key.pem";
 extern const char *WebPageSource;
 
 struct mg_tls_opts tls_opts;
@@ -19,8 +19,7 @@ struct mg_http_serve_opts css_opts;
 struct mg_http_serve_opts pdf_opts;
 struct mg_http_message home;
 
-void printAddress( char *buffer, size_t buflen, mg_addr &addr);
-void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data);
+void ev_handler(struct mg_connection *nc, int ev, void *ev_data);
 std::string parseFile(const char* fileName);
 std::string getCurrentWeather();
 std::string getTime();
@@ -35,8 +34,9 @@ int main( int argc, char *argv[] ){
     std::cout << "Using history file: " << historyFileName << std::endl;
 
     memset( &tls_opts, 0, sizeof(tls_opts));
-    tls_opts.cert = (argc>2) ? argv[2] : (char*)CertFileName;
-    tls_opts.certkey = (argc>3) ? argv[3] : (char*)KeyFileName;
+
+    tls_opts.cert = mg_file_read(&mg_fs_posix, (argc>2) ? argv[2] : CertFileName );
+    tls_opts.key = mg_file_read(&mg_fs_posix, (argc>2) ? argv[3] : KeyFileName );
 
     memset( &html_opts, 0, sizeof(html_opts));
     html_opts.mime_types = "html=text/html";
@@ -58,7 +58,7 @@ int main( int argc, char *argv[] ){
     mg_mgr_init( &mgr ) ;
 
     nc = mg_http_listen(&mgr, s_http_port, ev_handler, (void *)historyFileName ) ;
-    if (nc == NULL) {
+    if (nc == nullptr) {
         std::cerr << "Error starting server on port " << s_http_port << std::endl ;
         exit( 1 ) ;
     }
@@ -74,55 +74,33 @@ int main( int argc, char *argv[] ){
 
 
 
-void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *fn_data) {
+void ev_handler(struct mg_connection *nc, int ev, void *ev_data ) {
     struct http_message *hm = (struct http_message *)ev_data;
 
     if (ev == MG_EV_HTTP_MSG) {
         struct mg_http_message *msg = (struct mg_http_message*)ev_data;  
-        if( mg_http_match_uri(msg, "/history" ) ) {
-            std::string s = parseFile( (const char *)fn_data);
+        if( mg_match(msg->uri, mg_str("/history"), nullptr ) ) {
+            std::string s = parseFile( (const char *)nc->fn_data);
             mg_http_reply(nc, 200, "Content-Type: application/json\nServer: Sprinklers\r\n", "%s", s.c_str() ) ;
-        } else if( mg_http_match_uri(msg, "/weather" )){
+        } else if( mg_match(msg->uri, mg_str("/weather"), nullptr ) ) {
             std::string s = getCurrentWeather();
             mg_http_reply(nc, 200, "Content-Type: text/html\nServer: Sprinklers\r\n", "%s", s.c_str());
-        } else if( mg_http_match_uri(msg, "/home" )){
+        } else if( mg_match(msg->uri, mg_str("/home"), nullptr ) ) {
             mg_http_serve_file( nc, &home, "home.html", &html_opts);
-        } else if( mg_http_match_uri(msg, "/css.css")){
+        } else if( mg_match(msg->uri, mg_str("/css.css"), nullptr ) ) {
             mg_http_serve_file( nc, &home, "css.css", &css_opts);
-        } else if( mg_http_match_uri(msg, "/favicon.ico")) {
+        } else if( mg_match(msg->uri, mg_str("/favicon.ico"), nullptr ) ) {
             mg_http_reply(nc, 400, nullptr, "Code:Xenon");
         } else {
             char addr_buf[256];
-            printAddress( addr_buf, sizeof(addr_buf), nc->rem);
-            std::cerr << "Bad call from " << addr_buf << "\n" << msg->method.ptr << std::endl;
+            const auto len = mg_snprintf( addr_buf, sizeof(addr_buf), "Bad call from %M\n%s", mg_print_ip, &nc->rem, msg->method );
+            std::cerr << addr_buf << std::endl;
             mg_http_reply(nc, 400, nullptr, "");
         }
     } else if (ev == MG_EV_ACCEPT) {
         mg_tls_init( nc, &tls_opts);
-    }
-}
-
-void printAddress(char *buffer, size_t buflen, mg_addr &addr){
-    if( addr.is_ip6 ){
-        snprintf(buffer, buflen, 
-                 "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-                 (int)addr.ip6[0], (int)addr.ip6[1],
-                 (int)addr.ip6[2], (int)addr.ip6[3],
-                 (int)addr.ip6[4], (int)addr.ip6[5],
-                 (int)addr.ip6[6], (int)addr.ip6[7],
-                 (int)addr.ip6[8], (int)addr.ip6[9],
-                 (int)addr.ip6[10], (int)addr.ip6[11],
-                 (int)addr.ip6[12], (int)addr.ip6[13],
-                 (int)addr.ip6[14], (int)addr.ip6[15]
-        );        
-    } else {
-        snprintf(buffer, buflen, 
-                 "%d.%d.%d.%d",
-                 (int)addr.ip & 0xff,
-                 ((int)addr.ip & 0xff00) >> 8,
-                 ((int)addr.ip & 0xff0000) >> 16,
-                 ((int)addr.ip & 0xff000000) >> 24
-        );
+    } else if (ev == MG_EV_ERROR) {
+        std::cerr << "Error: " << (char *) ev_data << std::endl ;
     }
 }
 
