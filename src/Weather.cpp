@@ -72,9 +72,11 @@ void Weather::init() {
 void Weather::parseLocation( char *contents, size_t sz ) {
     stack<string> tags;
     char *p = (char*)contents;
-    Json::Reader reader;
+    Json::CharReaderBuilder builder;
     Json::Value root;
-    bool parsingSuccessful = reader.parse( p, root );
+    auto reader = builder.newCharReader();
+    bool parsingSuccessful = reader->parse( p, p+sz, &root, nullptr );
+    
     if( !parsingSuccessful ) {
         cerr << "Failed to parse json read\n" << p << endl;
     }
@@ -87,9 +89,10 @@ void Weather::parseLocation( char *contents, size_t sz ) {
 void Weather::parseHistory( char *contents, size_t sz ) {
     stack<string> tags ;
     char *p = (char*)contents ;
-    Json::Reader reader;
+    Json::CharReaderBuilder builder;
     Json::Value root;
-    bool parsingSuccessful = reader.parse( p, root );
+    auto reader = builder.newCharReader();
+    bool parsingSuccessful = reader->parse( p, p+sz, &root, nullptr );
     if( !parsingSuccessful ) {
         cerr << "Failed to parse json read\n" << p << endl;
     }
@@ -112,9 +115,10 @@ void Weather::parseHistory( char *contents, size_t sz ) {
 void Weather::parseForecast( char *contents, size_t sz ) {
     stack<string> tags ;
     char *p = (char*)contents ;
-    Json::Reader reader;
+    Json::CharReaderBuilder builder;
     Json::Value root;
-    bool parsingSuccessful = reader.parse( p, root );
+    auto reader = builder.newCharReader();
+    bool parsingSuccessful = reader->parse( p, p+sz, &root, nullptr );
     if( !parsingSuccessful ) {
         cerr << "Failed to parse json read\n" << p << endl;
     }
