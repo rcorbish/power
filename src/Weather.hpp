@@ -10,18 +10,16 @@
 
 class Weather {
     TEST_FRIENDS 
-    friend size_t WriteMemoryCallbackLocation(char *, size_t, size_t, void *) ;
-    friend size_t WriteMemoryCallbackHistory(char *, size_t, size_t, void *) ;
-    friend size_t WriteMemoryCallbackForecast(char *, size_t, size_t, void *) ;
-
+    friend size_t WriteMemoryCallback(char *, size_t, size_t, void *);
 private :
+    char *responseBuffer;
+    char *responseBufferPosition;
     double lon; 
     double lat;
     double totalRainFall;
     double forecastRainChance;
     std::ostringstream description;
-    long rainSince;
-    int hoursForecast;
+    int daysOfHistory;
 
     std::string location_url ;
     std::string history_url ;
@@ -34,7 +32,8 @@ protected:
     void parseForecast( char *contents, size_t sz ) ;
 
 public :
-    Weather( std::string zip, long pastHours, long forecastHours );
+    Weather( std::string zip, int pastHours, int forecastHours );
+    virtual ~Weather() { delete responseBuffer; }
     void init();
     void read();
     double getRecentRainfall() const;

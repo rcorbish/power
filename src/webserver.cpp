@@ -93,7 +93,7 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data ) {
             mg_http_reply(nc, 400, nullptr, "Code:Xenon");
         } else {
             char addr_buf[256];
-            const auto len = mg_snprintf( addr_buf, sizeof(addr_buf), "Bad call from %M\n%s", mg_print_ip, &nc->rem, msg->method );
+            const auto len = mg_snprintf( addr_buf, sizeof(addr_buf), "%.*s, Bad call from %M", (int)msg->uri.len, msg->uri.buf,  mg_print_ip, &nc->rem );
             std::cerr << addr_buf << std::endl;
             mg_http_reply(nc, 400, nullptr, "");
         }

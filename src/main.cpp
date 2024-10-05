@@ -32,13 +32,13 @@ typedef struct  {
     string device ;
     string zip ;
     int desiredMMRain = 5 ;
-    int previousHoursToLookForRain = 24 ;
+    int previousHoursToLookForRain = 48 ;
     ForceState state = UNKNOWN ;
     bool verbose = false ;
     int minutesToSprinkle = 45 ;
     bool test = false ;
     bool list = false ;
-    int forecastHours = 12 ;
+    int forecastHours = 24 ;
 } Args ;
 
 
