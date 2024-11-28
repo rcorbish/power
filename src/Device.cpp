@@ -45,22 +45,24 @@ void Device::sendMsg(const void *data, size_t length) {
     if (sz != length) {
         perror("sendto");
         reconnect();
+    } else {
+        cout << "Sent " << length << " bytes to " << inet_ntoa( remoteAddress.sin_addr ) << endl;
     }
 }
 
 Device::Device(const MSG408 &deviceInfo) : deviceInfo(deviceInfo) {
     sequence = 0x55;
+    // Setup a remote address for the device
+    memset(&remoteAddress, 0, sizeof(remoteAddress));
+    int n = inet_pton(AF_INET, deviceInfo.host, &remoteAddress.sin_addr);
+    remoteAddress.sin_port = htons(80);
+
     reconnect();
     int err = pthread_create(&threadId, nullptr, &receiverThread, this);
 }
 
 bool Device::reconnect() {
-    cout << "Opening connection to " << deviceInfo.id << endl;
-
-    // Setup a remote address for the device
-    memset(&remoteAddress, 0, sizeof(remoteAddress));
-    int n = inet_pton(AF_INET, deviceInfo.host, &remoteAddress.sin_addr);
-    remoteAddress.sin_port = htons(80);
+    cout << "Opening connection to " << deviceInfo.id << "["  << inet_ntoa( remoteAddress.sin_addr ) << "]"<< endl;
 
     // Prepare local socket from which we'll send and listen
     localSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
