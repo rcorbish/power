@@ -9,17 +9,17 @@ add_library(weather SHARED Weather.cpp )
 target_link_libraries( weather curl jsoncpp_lib )
 set_target_properties( weather PROPERTIES  LIBRARY_OUTPUT_DIRECTORY ".." )
 
-add_executable(sprinklers main.cpp History.cpp )
+add_executable(sprinklers main.cpp History.cpp Options.cpp)
 target_link_libraries( sprinklers power weather )
 set_target_properties( sprinklers PROPERTIES  RUNTIME_OUTPUT_DIRECTORY ".." )
 
-add_executable(readweather readWeather.cpp )
+add_executable(readweather readWeather.cpp Options.cpp )
 target_link_libraries( readweather weather )
 set_target_properties( readweather PROPERTIES  RUNTIME_OUTPUT_DIRECTORY ".." )
 
 ###############################################
 # Webserver
-add_executable(webserver webserver.cpp ${MONGOOSE_SRC}/mongoose.c History.cpp )
+add_executable(webserver webserver.cpp ${MONGOOSE_SRC}/mongoose.c History.cpp Options.cpp)
 target_include_directories ( webserver PUBLIC ${MONGOOSE_SRC} )
 
 if( OPENSSL_FOUND )

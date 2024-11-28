@@ -17,34 +17,9 @@
 #include "Connection.hpp"
 #include "Weather.hpp"
 #include "History.hpp"
+#include "Options.hpp"
 
 using namespace std;
-
-typedef enum {
-    ON ,
-    OFF ,
-    UNKNOWN 
-} ForceState ;
-
-
-
-typedef struct  {
-    string device ;
-    string zip ;
-    int desiredMMRain = 5 ;
-    int previousHoursToLookForRain = 48 ;
-    ForceState state = UNKNOWN ;
-    bool verbose = false ;
-    int minutesToSprinkle = 45 ;
-    bool test = false ;
-    bool list = false ;
-    int forecastHours = 24 ;
-} Args ;
-
-
-Args parseOptions( int argc, char **argv ) ;
-string getTime() ;
-
 
 int main(int argc, char **argv) {
     bool turnDeviceOn = false;
@@ -58,13 +33,8 @@ int main(int argc, char **argv) {
 
     try {
         Connection con; 
-        con.discover();
 
-        if( args.list ) {
-            for( auto entry : con.list() ) {
-                cout << entry.first << endl ;
-            }
-        } else if( args.state == ON ) {
+        if( args.state == ON ) {
             turnDeviceOn = true ;
         } else if( args.state == OFF ) {
             turnDeviceOn = false ;
@@ -145,90 +115,4 @@ int main(int argc, char **argv) {
         exit( -2 ) ;
     }    
     return 0 ;
-}
-
-
-void usage( char *argv0 ) ;
-
-constexpr struct option long_options[] = {
-    {"device",  required_argument, nullptr,  'd' },
-    {"list",    no_argument,       nullptr,  'l' },
-    {"zip",     required_argument, nullptr,  'z' },
-    {"period",  required_argument, nullptr,  'p' },
-    {"forecast",  required_argument, nullptr,  'f' },
-    {"needed",  required_argument, nullptr,  'n' },
-    {"state",   required_argument, nullptr,  's' },
-    {"minutes", required_argument, nullptr,  'm' },
-    {"test",    no_argument,       nullptr,  't' },
-    {"verbose", no_argument,       nullptr,  'v' },
-    {nullptr,   0,                 nullptr,  0 }
-} ;
-
-Args parseOptions( int argc, char **argv ) {
-    Args rc ;
-    int opt ;
-    while( (opt = getopt_long(argc, argv, "n:p:d:z:s:m:vtl", long_options, nullptr )) != -1 ) {
-        switch (opt) {
-        case 'd':
-            rc.device = optarg ;
-            break;
-        case 'z':
-            rc.zip = optarg ;
-            break;
-        case 'p':
-            rc.previousHoursToLookForRain = ::atol( optarg ) ;
-            break;
-        case 'f':
-            rc.forecastHours = ::atol( optarg ) ;
-            break;
-        case 'n':
-            rc.desiredMMRain = ::atol( optarg ) ;
-            break;
-        case 'm':
-            rc.minutesToSprinkle = ::atol( optarg ) ;
-            break;
-        case 's':
-            rc.state = (::strcasecmp( "on", optarg )==0) ? ON : OFF ;
-            break;
-        case 'v':
-            rc.verbose = true ;
-            break;
-        case 't':
-            rc.test = true ;
-            break;
-        case 'l':
-            rc.list = true ;
-            break;
-        default: /* '?' */
-            usage( argv[0] ) ;
-            break ;
-        }
-    }
-
-    if( rc.device.size() == 0 && !rc.list )  usage( argv[0] ) ;
-    if( rc.state == UNKNOWN && rc.zip.size() == 0 && !rc.list )  usage( argv[0] ) ;
-    return rc ;
-}
-
-void usage( char *argv0 ) {
-    cerr << "Usage:" << argv0 << " --device device --zip zip <--minutes=MMM> <--period HH> <--forecast FF> <--needed NN> <--test>" << endl ;
-    cerr << "       sprinkle for MMM minutes if rain less than NN mm of rain in past HH hours plus FF forecast rain" << endl ;
-    cerr << "       --test means show what would be done, don't change sprinklers" << endl ;
-    cerr << "Usage:" << argv0 << " --device device --state on|off" << endl ;
-    cerr << "Usage:" << argv0 << " --list" << endl ;
-    
-    exit(-1) ;
-}
-
-string getTime() {
-    time_t rawtime;
-    struct tm * timeinfo;
-    char buffer [80]; 
-
-    time( &rawtime );
-    timeinfo = localtime( &rawtime ) ;
-
-    strftime (buffer,80,"%d-%b-%Y %H:%M:%S ",timeinfo);
-
-    return string( buffer ) ;
 }

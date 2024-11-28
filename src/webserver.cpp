@@ -4,9 +4,13 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <chrono>
+#include <thread>
 
+#include "Connection.hpp"
 #include "History.hpp"
 #include "Weather.hpp"
+#include "Options.hpp"
 
 static const char *s_http_port = "https://0.0.0.0:8111";
 static const char *CertFileName = "cert.pem";
@@ -22,21 +26,33 @@ struct mg_http_message home;
 void ev_handler(struct mg_connection *nc, int ev, void *ev_data);
 std::string parseFile(const char* fileName);
 std::string getCurrentWeather();
-std::string getTime();
+std::string getDeviceState( const std::string &device );
 
 static long lastWeatherRead = 0L;
 static char weatherMessage[1024];
 Weather *weather;
+Connection *con = nullptr; 
+
+Args args;
 
 int main( int argc, char *argv[] ){
 
-    const char *historyFileName = (argc>1) ? argv[1] : HistoryLogName;
-    std::cout << "Using history file: " << historyFileName << std::endl;
+    Args args = parseOptions( argc, argv );
+
+    // Open connection to the device
+    con = new Connection(); 
+    for( int i=0 ; i<10 ; i++ ) {
+        if( con->found( args.device ) ) break;
+        con->discover();
+        std::this_thread::sleep_for(std::chrono::seconds(7));
+    }
+    std::cout << "Using device name: " << args.device << std::endl;
+    std::cout << "Using history file: " << args.historyFile << std::endl;
 
     memset( &tls_opts, 0, sizeof(tls_opts));
 
-    tls_opts.cert = mg_file_read(&mg_fs_posix, (argc>2) ? argv[2] : CertFileName );
-    tls_opts.key = mg_file_read(&mg_fs_posix, (argc>2) ? argv[3] : KeyFileName );
+    tls_opts.cert = mg_file_read(&mg_fs_posix, args.certificateFile.c_str() );
+    tls_opts.key = mg_file_read(&mg_fs_posix, args.keyFile.c_str() );
 
     memset( &html_opts, 0, sizeof(html_opts));
     html_opts.mime_types = "html=text/html";
@@ -48,7 +64,7 @@ int main( int argc, char *argv[] ){
 
     memset( &home, 0, sizeof(home));
 
-    weather = new Weather( "31525", 24, 24);
+    weather = new Weather( args.zip, args.previousHoursToLookForRain, args.forecastHours);
     weather->init();
 
     struct mg_mgr mgr;
@@ -57,7 +73,7 @@ int main( int argc, char *argv[] ){
 
     mg_mgr_init( &mgr ) ;
 
-    nc = mg_http_listen(&mgr, s_http_port, ev_handler, (void *)historyFileName ) ;
+    nc = mg_http_listen(&mgr, s_http_port, ev_handler, (void *)&args ) ;
     if (nc == nullptr) {
         std::cerr << "Error starting server on port " << s_http_port << std::endl ;
         exit( 1 ) ;
@@ -69,6 +85,7 @@ int main( int argc, char *argv[] ){
     }
     mg_mgr_free(&mgr);
 
+    delete con;
     return 0; 
 }
 
@@ -77,16 +94,21 @@ int main( int argc, char *argv[] ){
 void ev_handler(struct mg_connection *nc, int ev, void *ev_data ) {
     struct http_message *hm = (struct http_message *)ev_data;
 
+    const auto args = (const Args *)nc->fn_data;
+
     if (ev == MG_EV_HTTP_MSG) {
         struct mg_http_message *msg = (struct mg_http_message*)ev_data;  
         if( mg_match(msg->uri, mg_str("/history"), nullptr ) ) {
-            std::string s = parseFile( (const char *)nc->fn_data);
+            std::string s = parseFile( args->historyFile.c_str() );
             mg_http_reply(nc, 200, "Content-Type: application/json\nServer: Sprinklers\r\n", "%s", s.c_str() ) ;
         } else if( mg_match(msg->uri, mg_str("/weather"), nullptr ) ) {
             std::string s = getCurrentWeather();
             mg_http_reply(nc, 200, "Content-Type: text/html\nServer: Sprinklers\r\n", "%s", s.c_str());
         } else if( mg_match(msg->uri, mg_str("/home"), nullptr ) ) {
             mg_http_serve_file( nc, &home, "home.html", &html_opts);
+        } else if( mg_match(msg->uri, mg_str("/state"), nullptr ) ) {
+            std::string s = getDeviceState(args->device);
+            mg_http_reply(nc, 200, "Content-Type: text/html\nServer: Sprinklers\r\n", "%s", s.c_str());
         } else if( mg_match(msg->uri, mg_str("/css.css"), nullptr ) ) {
             mg_http_serve_file( nc, &home, "css.css", &css_opts);
         } else if( mg_match(msg->uri, mg_str("/favicon.ico"), nullptr ) ) {
@@ -141,15 +163,16 @@ std::string getCurrentWeather(){
     return std::string(weatherMessage);
 }
 
-std::string getTime(){
-    time_t rawtime;
-    struct tm * timeinfo;
-    char buffer [80]; 
 
-    time( &rawtime );
-    timeinfo = localtime(&rawtime);
+std::string getDeviceState( const std::string &device) {
+    if( con == nullptr ) {
+        return "Sprinklers are not found";
+    }
 
-    strftime (buffer,80,"%d-%b-%Y %H:%M:%S ",timeinfo);
+    bool isOn = con->get(device) ;
 
+    char buffer[128];
+    snprintf( buffer, sizeof(buffer), "Sprinklers are %s", (isOn ? "ON" : "OFF") ); 
     return std::string(buffer);
 }
+

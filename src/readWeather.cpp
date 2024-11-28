@@ -16,17 +16,8 @@
 #include "Connection.hpp"
 #include "Weather.hpp"
 #include "History.hpp"
+#include "Options.hpp"
 
-
-typedef struct  {
-    std::string zip ;
-    int previousHoursToLookForRain = 24 ;
-    int forecastHours = 12 ;
-} Args ;
-
-
-Args parseOptions( int argc, char **argv ) ;
-std::string getTime() ;
 
 
 int main( int argc, char **argv ) {
@@ -51,54 +42,3 @@ int main( int argc, char **argv ) {
     return 0 ;
 }
 
-
-void usage( char *argv0 ) ;
-
-constexpr struct option long_options[] = {
-    {"zip",     required_argument, nullptr,  'z' },
-    {"period",  required_argument, nullptr,  'p' },
-    {"forecast",  required_argument, nullptr,  'f' },
-    {nullptr,   0,                 nullptr,  0   }
-} ;
-
-Args parseOptions( int argc, char **argv ) {
-    Args rc ;
-    int opt ;
-    while( (opt = getopt_long(argc, argv, "p:z:f:", long_options, nullptr )) != -1 ) {
-        switch (opt) {
-        case 'z':
-            rc.zip = optarg ;
-            break;
-        case 'p':
-            rc.previousHoursToLookForRain = ::atol( optarg ) ;
-            break;
-        case 'f':
-            rc.forecastHours = ::atol( optarg ) ;
-            break;
-        default: /* '?' */
-            usage( argv[0] ) ;
-            break ;
-        }
-    }
-
-    if( rc.zip.size() == 0 )  usage( argv[0] ) ;
-    return rc ;
-}
-
-void usage( char *argv0 ) {
-    std::cerr << "Usage:" << argv0 << " --zip zip <--period HH> <--forecast FF> " << std::endl ;    
-    exit(-1) ;
-}
-
-std::string getTime() {
-    time_t rawtime;
-    struct tm * timeinfo;
-    char buffer [128]; 
-
-    time( &rawtime );
-    timeinfo = localtime( &rawtime ) ;
-
-    strftime (buffer,80,"%Y-%m-%d %H:%M:%S",timeinfo);
-
-    return std::string( buffer ) ;
-}
