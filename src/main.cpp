@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
         } else {
             weather.read() ;
             double totalRain = weather.getRecentRainfall() ;
-            double forecastRain = weather.getForecastRainChance() ;
+            double forecastRain = weather.getForecastRainfall() ;
 
             if( args.verbose ) {
                 cout << getTime() << args.zip << " received " << totalRain << "mm and forecasts " << forecastRain << "mm of rain." << endl ;

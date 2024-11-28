@@ -128,11 +128,11 @@ std::string parseFile( const char *historyFileName ) {
 
 std::string getCurrentWeather(){
     long now = time(nullptr);
-    if( (now - lastWeatherRead ) > (60 * 30) ) {   // only read every 30 mins
+    if( (now - lastWeatherRead) > (60 * 30) ) {   // only read every 30 mins
         lastWeatherRead = now;
         weather->read();
         double totalRain = weather->getRecentRainfall();
-        double forecastRain = weather->getForecastRainChance();
+        double forecastRain = weather->getForecastRainfall();
         std::string desc = weather->getDescription();
         snprintf( weatherMessage, sizeof(weatherMessage),
             "Current %s<br>Previous 48hrs %4.2f<br>Forceast 24hrs %4.2f<br>As of %s", 

@@ -16,8 +16,8 @@ private :
     char *responseBufferPosition;
     double lon; 
     double lat;
-    double totalRainFall;
-    double forecastRainChance;
+    double totalRecentRainfall;
+    double forecastRainfall;
     std::ostringstream description;
     int daysOfHistory;
 
@@ -37,6 +37,6 @@ public :
     void init();
     void read();
     double getRecentRainfall() const;
-    double getForecastRainChance() const;
+    double getForecastRainfall() const;
     const std::string getDescription() const;
 } ;

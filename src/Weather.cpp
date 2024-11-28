@@ -22,8 +22,9 @@ Weather::Weather(string zip, int pastHours, int forecastHours) {
     }
     string Server("https://api.weatherapi.com/v1/");
 
-    daysOfHistory = min( pastHours / 24, 1);
-    auto forecastDays = min( forecastHours / 24, 1);
+    // round up number of days to whole full day
+    daysOfHistory = (pastHours + 23) / 24;
+    const auto forecastDays = (forecastHours + 23) / 24;
     ostringstream buf;
     buf << Server << "forecast.json?key=" << api_key << "&q=" << zip << "&days=" << forecastDays << "&aqi=no&alerts=no" ;
 
@@ -66,7 +67,7 @@ void Weather::parseLocation(char *contents, size_t sz) {
     }
     lon = root["location"]["lon"].asDouble();
     lat = root["location"]["lat"].asDouble();
-    cout << lon << "," << lat << endl;
+    // cout << lon << "," << lat << endl;
 }
 
 void Weather::parseHistory(char *contents, size_t sz) {
@@ -80,7 +81,7 @@ void Weather::parseHistory(char *contents, size_t sz) {
         cerr << "Failed to parse json ...\n"
              << p << endl;
     }
-    totalRainFall += root["forecast"]["forecastday"][0]["day"]["totalprecip_mm"].asDouble();
+    totalRecentRainfall += root["forecast"]["forecastday"][0]["day"]["totalprecip_mm"].asDouble();
 }
 
 void Weather::parseForecast(char *contents, size_t sz) {
@@ -95,7 +96,7 @@ void Weather::parseForecast(char *contents, size_t sz) {
              << p << endl;
     }
     
-    forecastRainChance = root["forecast"]["forecastday"][0]["day"]["totalprecip_mm"].asDouble()
+    forecastRainfall = root["forecast"]["forecastday"][0]["day"]["totalprecip_mm"].asDouble()
                        + root["forecast"]["forecastday"][1]["day"]["totalprecip_mm"].asDouble();
 
     double degc = root["current"]["temp_c"].asDouble();
@@ -110,8 +111,8 @@ void Weather::parseForecast(char *contents, size_t sz) {
 
 void Weather::read() {
     // setup accumulators
-    forecastRainChance = 0;
-    totalRainFall = 0;
+    forecastRainfall = 0;
+    totalRecentRainfall = 0;
     description.str("");
 
     CURL *curl;
@@ -119,7 +120,6 @@ void Weather::read() {
     curl_global_init(CURL_GLOBAL_DEFAULT);
     curl = curl_easy_init();
     if (curl) {
-        constexpr int NUM_DAYS = 2;
         auto now = time(nullptr);   // get time now
         // We'll look back N days of history for rainfall
         for (int i = 0 ; i<daysOfHistory ; i++) {
@@ -157,11 +157,11 @@ void Weather::sendUrlRequest(void *x, const char *url, size_t (*write_callback)(
 }
 
 double Weather::getRecentRainfall() const {
-    return totalRainFall;
+    return totalRecentRainfall;
 }
 
-double Weather::getForecastRainChance() const {
-    return forecastRainChance;
+double Weather::getForecastRainfall() const {
+    return forecastRainfall;
 }
 
 const string Weather::getDescription() const {
