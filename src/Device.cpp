@@ -71,6 +71,8 @@ bool Device::reconnect() {
         return false;
     }
 
+    cout << "Opened " << inet_ntoa( remoteAddress.sin_addr ) << endl;
+
     struct sockaddr_in address;
     memset(&address, 0, sizeof(address));
 
@@ -83,6 +85,7 @@ bool Device::reconnect() {
         return false;
     }
 
+    cout << "Bound " << inet_ntoa( remoteAddress.sin_addr ) << endl;
     return true;
 }
 
