@@ -28,7 +28,11 @@ void Device::recvLoop() {
             getReady = true;
             isOn = msg[129] != 0;
         }
+        if( n == 0 ) {
+            cerr << "Device connection [" << deviceInfo.id << "] is closed !!!!" << endl;
+        }
     }
+    cerr << "Exited Device receive loop !!!!" << endl;
 }
 
 void Device::sendMsg(const void *data, size_t length) {
@@ -40,12 +44,18 @@ void Device::sendMsg(const void *data, size_t length) {
                        sizeof(remoteAddress));
     if (sz != length) {
         perror("sendto");
-        exit(EXIT_FAILURE);
+        reconnect();
     }
 }
 
 Device::Device(const MSG408 &deviceInfo) : deviceInfo(deviceInfo) {
     sequence = 0x55;
+    reconnect();
+    int err = pthread_create(&threadId, nullptr, &receiverThread, this);
+}
+
+bool Device::reconnect() {
+    cout << "Opening connection to " << deviceInfo.id << endl;
 
     // Setup a remote address for the device
     memset(&remoteAddress, 0, sizeof(remoteAddress));
@@ -56,7 +66,7 @@ Device::Device(const MSG408 &deviceInfo) : deviceInfo(deviceInfo) {
     localSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
     if (localSocket == 0) {
         perror("socket failed");
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     struct sockaddr_in address;
@@ -68,10 +78,10 @@ Device::Device(const MSG408 &deviceInfo) : deviceInfo(deviceInfo) {
 
     if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
         perror("bind failed");
-        exit(EXIT_FAILURE);
+        return false;
     }
 
-    int err = pthread_create(&threadId, nullptr, &receiverThread, this);
+    return true;
 }
 
 bool Device::get() {
@@ -124,8 +134,13 @@ bool Device::get() {
     *p++ = 0xef;
 
     sendMsg(msg, sizeof(msg));
+    uint16_t watchdog = 300;  // wait for 300 x 200mS = 1min.
     while ( !getReady ) {
         this_thread::sleep_for(std::chrono::milliseconds(200));
+        if( --watchdog == 0 ) {
+            cerr << "Timeout waiting for device response" << endl;
+            reconnect();
+        }
     }
     return isOn;
 }

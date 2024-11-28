@@ -7,6 +7,9 @@
 #include <sys/socket.h>
 
 #include "Connection.hpp"
+#include <arpa/inet.h>
+
+using namespace std;
 
 void *Connection::receiverThread(void *self) {
     ((Connection *)self)->recvLoop();
@@ -19,15 +22,16 @@ void Connection::recvLoop() {
         int n = recvfrom(localSocket, &deviceInfo, sizeof(deviceInfo), 0, nullptr, nullptr);
         if (n < 0) {
             perror("recvfrom");
-            abort();
+            break;
         }
-        std::string deviceName(deviceInfo.id);
+        string deviceName(deviceInfo.id);
 
         if (devices.find(deviceName) == devices.end()) {
-            // std::cout << "Adding new device " << deviceName << std::endl;
+            cout << "Adding new device " << deviceName << endl;
             devices.emplace(deviceName, deviceInfo);
         }
     }
+    cerr << "Exited Connection receive loop !!!!" << endl;
 }
 
 void Connection::sendMsg(const void *data, size_t length) {
@@ -45,7 +49,8 @@ void Connection::sendMsg(const void *data, size_t length) {
                        sizeof(remoteAddress));
     if (sz != length) {
         perror("sendto");
-        exit(EXIT_FAILURE);
+    } else {
+        cout << "Sent " << length << " bytes to " << inet_ntoa( remoteAddress.sin_addr ) << endl;
     }
 }
 
@@ -85,7 +90,9 @@ Connection::Connection() {
         exit(EXIT_FAILURE);
     }
 
+    cout << "Listening for broadcasts on " << inet_ntoa(address.sin_addr) << endl;
     int err = pthread_create(&threadId, nullptr, &receiverThread, this);
+
 }
 
 void Connection::discover() {

@@ -54,7 +54,7 @@ class Device {
 
   protected:
     void sendMsg( const void *data, size_t length ) ;
-    
+    bool reconnect();
   public:
     Device( const MSG408 &deviceInfo ) ;
 
