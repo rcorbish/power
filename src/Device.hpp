@@ -42,19 +42,15 @@ class Device {
   private:
     const MSG408 deviceInfo ;
 
-    int localSocket;
     struct sockaddr_in remoteAddress;
     uint32_t sequence ;
     pthread_t threadId ;
     uint8_t getReady ;
     bool isOn ;
 
-    void recvLoop() ;
-    static void *receiverThread(void *self) ;
-
   protected:
-    void sendMsg( const void *data, size_t length ) ;
-    bool reconnect();
+    void sendMsg( const void *data, size_t length, bool getResponse ) ;
+    int connect();
   public:
     Device( const MSG408 &deviceInfo ) ;
 
