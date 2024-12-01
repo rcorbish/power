@@ -14,6 +14,7 @@
 
 #include "Device.hpp"
 #include <netdb.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -41,45 +42,29 @@ void Device::sendMsg(const void *data, size_t length) {
     sequence++;
   
     const auto localSocket = connect();
-    struct sockaddr_storage their_addr;
-    socklen_t their_addr_size = sizeof(their_addr);
-    const auto new_sd = accept(localSocket, (struct sockaddr*)&their_addr, &their_addr_size);
-    if( new_sd < 0) {
-        perror("accept");
-        return;
-    }
-    
-    fd_set read_flags;
-    fd_set write_flags; // the flag sets to be used
-    FD_ZERO(&read_flags);
-    FD_ZERO(&write_flags);
-    FD_SET(new_sd, &write_flags);
 
-    struct timeval waitd = {10, 0};  
-    auto sel = select(new_sd+1, &read_flags, &write_flags, (fd_set*)0, &waitd);
-
-    // Can we write the message ?
-    if( FD_ISSET(new_sd, &write_flags)) {
-        size_t sz = sendto(localSocket, data, length,
-                       MSG_CONFIRM,
-                       (const struct sockaddr *)&remoteAddress,
-                       sizeof(remoteAddress));
-        if (sz != length) {
-            perror("sendto");
-        } else {
-            cout << "Sent " << length << " bytes to " << inet_ntoa( remoteAddress.sin_addr ) << endl;
-        }
+    size_t sz = sendto(localSocket, data, length,
+                    MSG_CONFIRM,
+                    (const struct sockaddr *)&remoteAddress,
+                    sizeof(remoteAddress));
+    if (sz != length) {
+        perror("sendto");
+    } else {
+        cout << "Sent " << length << " bytes to " << inet_ntoa( remoteAddress.sin_addr ) << endl;
     }
 
-    FD_ZERO(&read_flags);
-    FD_ZERO(&write_flags);
-    FD_SET(new_sd, &read_flags);
-
-    // Anything to read back?
-    sel = select(new_sd+1, &read_flags, &write_flags, (fd_set*)0, &waitd);
-    if( FD_ISSET(new_sd, &read_flags)) {
+    auto watchdog = 10 ;
+    while( true ) {
         uint8_t msg[1024];
-        auto n = recvfrom(localSocket, msg, sizeof(msg), 0, nullptr, nullptr);
+        auto n = recv(localSocket, msg, sizeof(msg), MSG_DONTWAIT);
+        if( n < 0 ) {
+            if( errno == EAGAIN || errno == EWOULDBLOCK ) {
+                if( --watchdog == 0 ) {
+                    break;
+                }
+                this_thread::sleep_for(chrono::milliseconds(500));
+            }
+        }
         if( n == 0 ) {
             cerr << "Device connection [" << deviceInfo.id << "] is closed !!!!" << endl;
         } else {
@@ -89,7 +74,9 @@ void Device::sendMsg(const void *data, size_t length) {
             isOn = msg[129] != 0;
             getReady = true;
         }
+        break;
     }
+    close( localSocket );
 }
 
 Device::Device(const MSG408 &deviceInfo) : deviceInfo(deviceInfo) {
