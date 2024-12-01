@@ -63,6 +63,9 @@ void Device::sendMsg(const void *data, size_t length) {
                     break;
                 }
                 this_thread::sleep_for(chrono::milliseconds(500));
+                continue; // retry reading after delay
+            } else {
+                perror( "recv" );
             }
         }
         if( n == 0 ) {
