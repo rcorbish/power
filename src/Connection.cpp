@@ -16,6 +16,8 @@ void *Connection::receiverThread(void *self) {
     return nullptr;
 }
 
+// This runs in a thread - since we have no idea
+// how many response we get to a broadcast message
 void Connection::recvLoop() {
     MSG408 deviceInfo;
     for (;;) {

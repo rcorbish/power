@@ -54,15 +54,18 @@ void Device::sendMsg(const void *data, size_t length) {
     }
 
     auto watchdog = 10 ;
+    auto num_bytes_left_to_read = 130;
+    auto total_bytes_read = 0;
+    uint8_t msg[1024];
+
     while( true ) {
-        uint8_t msg[1024];
-        auto n = recv(localSocket, msg, sizeof(msg), MSG_DONTWAIT);
+        auto n = recv(localSocket, msg+total_bytes_read, sizeof(msg)-total_bytes_read, MSG_DONTWAIT);
         if( n < 0 ) {
             if( errno == EAGAIN || errno == EWOULDBLOCK ) {
                 if( --watchdog == 0 ) {
                     break;
                 }
-                this_thread::sleep_for(chrono::milliseconds(500));
+                this_thread::sleep_for(chrono::milliseconds(250));
                 continue; // retry reading after delay
             } else {
                 perror( "recv" );
@@ -73,11 +76,13 @@ void Device::sendMsg(const void *data, size_t length) {
         } else {
             cout << "Read " << n << " bytes from remote" << endl ;
         }
-        if( n == 130 ) {
+        num_bytes_left_to_read -= n;
+        total_bytes_read += n;
+        if( num_bytes_left_to_read == 0 ) {
             isOn = msg[129] != 0;
             getReady = true;
+            break;
         }
-        break;
     }
     close( localSocket );
 }

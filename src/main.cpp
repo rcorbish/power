@@ -53,21 +53,21 @@ int main(int argc, char **argv) {
             }
         }
 
+        con.discover() ;
         if( args.list ) {
-            con.discover() ;
             this_thread::sleep_for(chrono::seconds(12));
             for( auto entry : con.list() ) {
                 cout << entry.first << endl ;
             }
         } else { 
-            for( int i=0 ; i<10 ; i++ ) {
+            for( int i=0 ; i<20 ; i++ ) {
                 if( con.found( args.device ) ) break ;
-                con.discover() ;
-                this_thread::sleep_for(chrono::seconds(7));
+                // give some time for response
+                this_thread::sleep_for(chrono::seconds(1));
             }
         }
 
-        bool on = con.get( args.device ) ;
+        bool on = con.get( args.device );
         if( args.verbose ) {
             if( on == turnDeviceOn ) {
                 cout << getTime() << "Device is already " << (on?"ON":"OFF") << endl ;
