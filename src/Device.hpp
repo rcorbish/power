@@ -49,7 +49,7 @@ class Device {
     bool isOn ;
 
   protected:
-    void sendMsg( const void *data, size_t length, bool getResponse ) ;
+    void sendMsg( const void *data, size_t length ) ;
     int connect();
   public:
     Device( const MSG408 &deviceInfo ) ;

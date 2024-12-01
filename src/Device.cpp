@@ -8,10 +8,12 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <chrono>
 #include <thread>
 
 #include "Device.hpp"
+#include <netdb.h>
 
 using namespace std;
 
@@ -35,30 +37,57 @@ using namespace std;
 //     cerr << "Exited Device receive loop !!!!" << endl;
 // }
 
-void Device::sendMsg(const void *data, size_t length, bool getResponse) {
+void Device::sendMsg(const void *data, size_t length) {
     sequence++;
-
+  
     const auto localSocket = connect();
-    size_t sz = sendto(localSocket, data, length,
+    struct sockaddr_storage their_addr;
+    socklen_t their_addr_size = sizeof(their_addr);
+    const auto new_sd = accept(localSocket, (struct sockaddr*)&their_addr, &their_addr_size);
+    if( new_sd < 0) {
+        perror("accept");
+        return;
+    }
+    
+    fd_set read_flags;
+    fd_set write_flags; // the flag sets to be used
+    FD_ZERO(&read_flags);
+    FD_ZERO(&write_flags);
+    FD_SET(new_sd, &write_flags);
+
+    struct timeval waitd = {10, 0};  
+    auto sel = select(new_sd+1, &read_flags, &write_flags, (fd_set*)0, &waitd);
+
+    // Can we write the message ?
+    if( FD_ISSET(new_sd, &write_flags)) {
+        size_t sz = sendto(localSocket, data, length,
                        MSG_CONFIRM,
                        (const struct sockaddr *)&remoteAddress,
                        sizeof(remoteAddress));
-    if (sz != length) {
-        perror("sendto");
-        connect();
-    } else {
-        cout << "Sent " << length << " bytes to " << inet_ntoa( remoteAddress.sin_addr ) << endl;
+        if (sz != length) {
+            perror("sendto");
+        } else {
+            cout << "Sent " << length << " bytes to " << inet_ntoa( remoteAddress.sin_addr ) << endl;
+        }
     }
 
-    if( getResponse ) {
+    FD_ZERO(&read_flags);
+    FD_ZERO(&write_flags);
+    FD_SET(new_sd, &read_flags);
+
+    // Anything to read back?
+    sel = select(new_sd+1, &read_flags, &write_flags, (fd_set*)0, &waitd);
+    if( FD_ISSET(new_sd, &read_flags)) {
         uint8_t msg[1024];
         auto n = recvfrom(localSocket, msg, sizeof(msg), 0, nullptr, nullptr);
+        if( n == 0 ) {
+            cerr << "Device connection [" << deviceInfo.id << "] is closed !!!!" << endl;
+        } else {
+            cout << "Read " << n << " bytes from remote" << endl ;
+        }
         if( n == 130 ) {
             isOn = msg[129] != 0;
             getReady = true;
-        }
-        if( n == 0 ) {
-            cerr << "Device connection [" << deviceInfo.id << "] is closed !!!!" << endl;
         }
     }
 }
@@ -81,6 +110,12 @@ int Device::connect() {
         return -1;
     }
 
+    int reuse_true = 1;
+    if (setsockopt(localSocket,SOL_SOCKET,SO_REUSEADDR,&reuse_true, sizeof(reuse_true)) < 0) {
+        perror("setsockopt");
+        return -1;
+    }
+
     cout << "Opened " << inet_ntoa( remoteAddress.sin_addr ) << endl;
 
     struct sockaddr_in address;
@@ -95,7 +130,14 @@ int Device::connect() {
         return -1;
     }
 
-    cout << "Bound " << inet_ntoa( remoteAddress.sin_addr ) << endl;
+    cout << "Bound local[" << inet_ntoa( address.sin_addr ) << "] to remote [" 
+                           << inet_ntoa( remoteAddress.sin_addr ) << "]" << endl;
+
+    const auto flags = fcntl(localSocket,F_GETFL,0);
+    if( flags >= 0 ) {
+        fcntl(localSocket, F_SETFL, flags | O_NONBLOCK);
+    }
+
     return localSocket;
 }
 
@@ -148,7 +190,7 @@ bool Device::get() {
     *p++ = 0xbe;
     *p++ = 0xef;
 
-    sendMsg(msg, sizeof(msg), true);
+    sendMsg(msg, sizeof(msg));
     return isOn;
 }
 
@@ -204,7 +246,7 @@ void Device::set(bool switchOn) {
     *p++ = 0x01;
     *p++ = (switchOn ? 0x01 : 0x00);
 
-    sendMsg(msg, sizeof(msg), false);
+    sendMsg(msg, sizeof(msg));
 }
 
 std::ostream &operator<<(std::ostream &os, const Device &dev) {
