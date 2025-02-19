@@ -220,12 +220,16 @@ std::string getSecurityInfo( const int port) {
     send(sock, "Go\n", 3, 0);
     
     // Receive response from server
-    int valread = read(sock, buffer, Buffer_Size);
+    std::stringstream ss;
+    int valread = 0;
+    do {
+        valread = read(sock, buffer, Buffer_Size);
+        ss << buffer ;
+    } while( valread > 0 );
     
     // Close the connection
     close(sock);
 
-    std::stringstream ss(buffer);
     std::string to;
 
     std::stringstream results ;
