@@ -12,10 +12,12 @@
 #include "Weather.hpp"
 #include "Options.hpp"
 
-static const char *s_http_port = "https://0.0.0.0:8111";
-static const char *CertFileName = "cert.pem";
-static const char *KeyFileName = "key.pem";
-extern const char *WebPageSource;
+constexpr const char *s_http_port = "https://0.0.0.0:8111";
+constexpr const char *CertFileName = "cert.pem";
+constexpr const char *KeyFileName = "key.pem";
+
+constexpr int  SecurityPort = 9111 ;
+constexpr int  Buffer_Size = 1024 ;
 
 struct mg_tls_opts tls_opts;
 struct mg_http_serve_opts html_opts;
@@ -27,6 +29,7 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data);
 std::string parseFile(const char* fileName);
 std::string getCurrentWeather();
 std::string getDeviceState( const std::string &device );
+std::string getSecurityInfo( const int port );
 
 static long lastWeatherRead = 0L;
 static char weatherMessage[1024];
@@ -109,6 +112,9 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data ) {
         } else if( mg_match(msg->uri, mg_str("/state"), nullptr ) ) {
             std::string s = getDeviceState(args->device);
             mg_http_reply(nc, 200, "Content-Type: text/html\nServer: Sprinklers\r\n", "%s", s.c_str());
+        } else if( mg_match(msg->uri, mg_str("/security"), nullptr ) ) {
+            std::string s = getSecurityInfo(SecurityPort);
+            mg_http_reply(nc, 200, "Content-Type: text/html\nServer: Sprinklers\r\n", "%s", s.c_str());
         } else if( mg_match(msg->uri, mg_str("/css.css"), nullptr ) ) {
             mg_http_serve_file( nc, &home, "css.css", &css_opts);
         } else if( mg_match(msg->uri, mg_str("/favicon.ico"), nullptr ) ) {
@@ -169,10 +175,66 @@ std::string getDeviceState( const std::string &device) {
         return "Sprinklers are not found";
     }
 
-    bool isOn = con->get(device) ;
+    try {
+        bool isOn = con->get(device) ;
 
-    char buffer[128];
-    snprintf( buffer, sizeof(buffer), "Sprinklers are %s", (isOn ? "ON" : "OFF") ); 
-    return std::string(buffer);
+        char buffer[128];
+        snprintf( buffer, sizeof(buffer), "Sprinklers are %s", (isOn ? "ON" : "OFF") ); 
+        return std::string(buffer);
+    } catch( const std::string &e ) {
+        std::cerr << e << std::endl;
+    }
+    return "Can't get device state";
 }
 
+
+std::string getSecurityInfo( const int port) {
+
+    int sock = 0;
+    struct sockaddr_in serv_addr;
+    char buffer[Buffer_Size] = {0};
+    
+    // Create socket
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("Socket creation error");
+        return "";
+    }
+    
+    // Set up server address
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(port);
+    
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+        perror("Invalid address/ Address not supported");
+        return "";
+    }
+    
+    // Connect to server
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("Connection Failed");
+        return "";
+    }
+        
+    // Send 3 bytes to server
+    send(sock, "Go\n", 3, 0);
+    
+    // Receive response from server
+    int valread = read(sock, buffer, Buffer_Size);
+    
+    // Close the connection
+    close(sock);
+
+    std::stringstream ss(buffer);
+    std::string to;
+
+    std::stringstream results ;
+
+    results << "<table><tr><th>Sensor</th></tr>";
+    while(std::getline(ss,to,'\n')){
+        results << "<tr><td>" << to << "</td></tr>";
+    }      
+    results << "</table>";
+
+    return results.str();
+}
