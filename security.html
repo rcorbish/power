@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='utf-8'/>
+<link rel='shortcut icon' href='data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA/4QAAOvl3wDy7+sAz8a8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABEAARAAEQAAEQABEAARAAAAAAAAAAAAAAEQABEAARAAARAAEQABEAAAAAAAAAAABEQENENEQABEREREREQkQEI0REJENERERERCRENEREQERERDREJEAABCNEQkREAABEREREJEQAAENEBCRENAAABEQERARAAAAAAABEAAAADOcwAAznMAAP//AADnOQAA5zkAAP//AACIBwAAAAEAAAAAAAAAAAAAgAMAAMAHAACABwAAhAcAAMRPAAD+fwAA' type='image/x-icon'>
+<link rel='stylesheet' href='css.css'>
+<script>
+
+const DateFormat = { 
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false
+}
+
+function timeSince( then ) {
+   var now = new Date()
+   var delta = now - then
+   var days = Math.floor( delta / ( 1000 * 60 * 60 * 24 ) )
+   var hours = Math.floor( delta / ( 1000 * 60 * 60 ) ) % 24
+   var minutes = Math.floor( delta / ( 1000 * 60 ) ) % 60
+   var seconds = Math.floor( delta / 1000 ) % 60
+   return (days > 0) ? (days + ' D ') : '' + 
+          ((hours < 10) ? ('0' + hours ) : hours ) + ':' + 
+          ((minutes < 10) ? ('0' + minutes ) : minutes ) + ':' + 
+          ((seconds < 10) ? ('0' + seconds ) : seconds ) 
+}
+
+function securityListener () {
+   var data = JSON.parse(this.responseText);
+   var div = document.getElementById( 'security' )
+
+   const tbl = document.createElement( 'table' ) 
+   const hdg = document.createElement( 'tr' ) 
+   const h_name = document.createElement( 'th' ) 
+   const t_name = document.createTextNode( 'Name' )
+   const h_alar = document.createElement( 'th' ) 
+   const t_alar = document.createTextNode( 'Last Alarm' )
+   const h_updt = document.createElement( 'th' ) 
+   const t_updt = document.createTextNode( 'Last Update' )
+   const h_stat = document.createElement( 'th' ) 
+   const t_stat = document.createTextNode( 'State' )
+   const h_batt = document.createElement( 'th' ) 
+   const t_batt = document.createTextNode( 'Battery' )
+   const h_tamp = document.createElement( 'th' ) 
+   const t_tamp = document.createTextNode( 'Tamper' )
+
+   h_name.appendChild( t_name )
+   h_alar.appendChild( t_alar )
+   h_updt.appendChild( t_updt )
+   h_stat.appendChild( t_stat )
+   h_batt.appendChild( t_batt )
+   h_tamp.appendChild( t_tamp )
+
+   hdg.appendChild( h_name )
+   hdg.appendChild( h_alar )
+   hdg.appendChild( h_updt )
+   hdg.appendChild( h_stat )
+   hdg.appendChild( h_batt )
+   hdg.appendChild( h_tamp )
+   
+   tbl.appendChild( hdg ) 
+
+   for( var i=0 ; i<data.sensors.length ; i++ ) {
+       var sensor = data.sensors[i]
+    
+       const row = document.createElement( 'tr' ) 
+
+       const c_name = document.createElement( 'td' ) 
+       const x_name = document.createTextNode( sensor.name )
+
+       const c_alarmTime = document.createElement( 'td' ) 
+       const x_alarmTime = ( sensor.lastAlarm != 0 ) ?
+         document.createTextNode( new Date( 1000 * sensor.lastAlarm ).toLocaleString(navigator.language, DateFormat) ) :
+         document.createTextNode( '-' )       
+
+       const c_eventTime = document.createElement( 'td' ) 
+       const x_eventTime = ( sensor.lastEvent != 0 ) ?
+         document.createTextNode( timeSince( new Date( 1000 * sensor.lastEvent ) ) ) :
+         document.createTextNode( '-' )       
+
+       const c_alar = document.createElement( 'td' ) 
+       const x_alar = document.createTextNode( sensor.active )
+       const c_batt = document.createElement( 'td' ) 
+       const x_batt = document.createTextNode( sensor.low_battery )
+       const c_tamp = document.createElement( 'td' ) 
+       const x_tamp = document.createTextNode( sensor.tamper )
+
+       c_name.appendChild( x_name )
+       c_alarmTime.appendChild( x_alarmTime )
+       c_eventTime.appendChild( x_eventTime )
+       c_alar.appendChild( x_alar )
+       c_batt.appendChild( x_batt )
+       c_tamp.appendChild( x_tamp )
+
+       row.appendChild( c_name )
+       row.appendChild( c_alarmTime )
+       row.appendChild( c_eventTime )
+       row.appendChild( c_alar )
+       row.appendChild( c_batt )
+       row.appendChild( c_tamp ) 
+
+       tbl.appendChild( row );
+   }
+   div.appendChild( tbl ) 
+
+}
+
+function document_loaded() {
+   var oReq = new XMLHttpRequest()
+   oReq.addEventListener('load', securityListener)
+   oReq.open('GET', 'security-data')
+   oReq.send()
+}
+
+window.addEventListener('load', document_loaded)
+
+</script>
+
+</head>
+<body>
+
+Security status
+<div id='security' >
+</div>
+
+</body>
+</html>

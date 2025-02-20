@@ -112,9 +112,11 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data ) {
         } else if( mg_match(msg->uri, mg_str("/state"), nullptr ) ) {
             std::string s = getDeviceState(args->device);
             mg_http_reply(nc, 200, "Content-Type: text/html\nServer: Sprinklers\r\n", "%s", s.c_str());
-        } else if( mg_match(msg->uri, mg_str("/security"), nullptr ) ) {
+        } else if( mg_match(msg->uri, mg_str("/security-data"), nullptr ) ) {
             std::string s = getSecurityInfo(SecurityPort);
-            mg_http_reply(nc, 200, "Content-Type: text/html\nServer: Sprinklers\r\n", "%s", s.c_str());
+            mg_http_reply(nc, 200, "Content-Type: application/json\nServer: Sprinklers\r\n", "%s", s.c_str());
+        } else if( mg_match(msg->uri, mg_str("/security"), nullptr ) ) {
+            mg_http_serve_file( nc, &home, "security.html", &html_opts);
         } else if( mg_match(msg->uri, mg_str("/css.css"), nullptr ) ) {
             mg_http_serve_file( nc, &home, "css.css", &css_opts);
         } else if( mg_match(msg->uri, mg_str("/favicon.ico"), nullptr ) ) {
@@ -192,7 +194,7 @@ std::string getSecurityInfo( const int port) {
 
     int sock = 0;
     struct sockaddr_in serv_addr;
-    char buffer[Buffer_Size] = {0};
+    char buffer[Buffer_Size+1] = {0};
     
     // Create socket
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -224,21 +226,13 @@ std::string getSecurityInfo( const int port) {
     int valread = 0;
     do {
         valread = read(sock, buffer, Buffer_Size);
-        ss << buffer ;
+        if( valread > 0 ) {
+            buffer[valread] = 0;
+            ss << buffer ;
+        }
     } while( valread > 0 );
     
     // Close the connection
     close(sock);
-
-    std::string to;
-
-    std::stringstream results ;
-
-    results << "<table><tr><th>Sensor</th></tr>";
-    while(std::getline(ss,to,'\n')){
-        results << "<tr><td>" << to << "</td></tr>";
-    }      
-    results << "</table>";
-
-    return results.str();
+    return ss.str();
 }
