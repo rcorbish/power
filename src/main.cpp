@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
             if( turnDeviceOn ) {
                 while( !on ) {
                     con.set( args.device, true ) ;
-                    this_thread::sleep_for(chrono::milliseconds(1500));
+                    this_thread::sleep_for(chrono::seconds(10));
                     on = con.get( args.device ) ;
                     if(!on) {
                         cout << getTime() << "Device is not on, will retry" << endl ;
@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
 
             while(on) {
                 con.set( args.device, false ) ;
-                this_thread::sleep_for(chrono::milliseconds(1500));
+                this_thread::sleep_for(chrono::seconds(10));
                 on = con.get( args.device ) ;
                 if(on) {
                     cout << getTime() << "Device is still on, will retry" << endl ;
