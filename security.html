@@ -31,6 +31,8 @@ function timeSince( then ) {
 
 function securityListener () {
    var data = JSON.parse(this.responseText);
+   data.sensors = data.sensors.sort( (a,b) => a.name.localeCompare(b.name) )
+
    var div = document.getElementById( 'security' )
 
    const tbl = document.createElement( 'table' ) 
