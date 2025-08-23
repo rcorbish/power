@@ -49,6 +49,9 @@ table {
 }
 
 .switch-link {
+       position:absolute;
+       bottom: 0;
+       right: 0;
        color: bisque;
        text-decoration: none;
 }
