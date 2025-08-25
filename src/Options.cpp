@@ -99,7 +99,12 @@ Args parseOptions( int argc, char **argv, ProgramType programType ) {
             break;
             
         case ProgramType::WEBSERVER:
-            // Webserver has minimal requirements - will get device from config
+            if (rc.device.empty()) {
+                throw ConfigurationException("Device name is required for webserver (use --device)");
+            }
+            if (rc.zip.empty()) {
+                throw ConfigurationException("Zip code is required for webserver (use --zip)");
+            }
             break;
     }
     
