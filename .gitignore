@@ -13,7 +13,7 @@ readweather
 *.so
 *.a
 *.dat
-*.log
+*.log.*
 *.pem
 nodejs/
 *.crt

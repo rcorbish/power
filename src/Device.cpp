@@ -11,8 +11,10 @@
 #include <fcntl.h>
 #include <chrono>
 #include <thread>
+#include <cerrno>
 
 #include "Device.hpp"
+#include "Logger.hpp"
 #include <netdb.h>
 #include <unistd.h>
 
@@ -32,7 +34,9 @@ using namespace std;
 //             isOn = msg[129] != 0;
 //         }
 //         if( n == 0 ) {
-//             cerr << "Device connection [" << deviceInfo.id << "] is closed !!!!" << endl;
+//             if (g_logger) {
+//                LOG_WARN("Device connection [{}] is closed", deviceInfo.id);
+//            }
 //         }
 //     }
 //     cerr << "Exited Device receive loop !!!!" << endl;
@@ -48,9 +52,15 @@ void Device::sendMsg(const void *data, size_t length) {
                     (const struct sockaddr *)&remoteAddress,
                     sizeof(remoteAddress));
     if (sz != length) {
-        perror("sendto");
+        if (g_logger) {
+            LOG_ERROR("Device sendto failed: {}", strerror(errno));
+        } else {
+            perror("sendto");
+        }
     } else {
-        cout << "Sent " << length << " bytes to " << inet_ntoa( remoteAddress.sin_addr ) << endl;
+        if (g_logger) {
+            LOG_DEBUG("Device sent {} bytes to {}", length, inet_ntoa(remoteAddress.sin_addr));
+        }
     }
 
     auto watchdog = 10 ;
@@ -70,9 +80,13 @@ void Device::sendMsg(const void *data, size_t length) {
             }
         }
         if( n == 0 ) {
-            cerr << "Device connection [" << deviceInfo.id << "] is closed !!!!" << endl;
+            if (g_logger) {
+                LOG_WARN("Device connection [{}] is closed", deviceInfo.id);
+            }
         } else {
-            cout << "Read " << n << " bytes from remote" << endl ;
+            if (g_logger) {
+                LOG_DEBUG("Device read {} bytes from remote", n);
+            }
         }
         if( n == 130 ) {
             isOn = msg[129] != 0;
@@ -92,22 +106,34 @@ Device::Device(const MSG408 &deviceInfo) : deviceInfo(deviceInfo) {
 }
 
 int Device::connect() {
-    cout << "Opening connection to " << deviceInfo.id << "["  << inet_ntoa( remoteAddress.sin_addr ) << "]"<< endl;
+    if (g_logger) {
+        LOG_INFO("Opening connection to device {} [{}]", deviceInfo.id, inet_ntoa(remoteAddress.sin_addr));
+    }
 
     // Prepare local socket from which we'll send and listen
     int localSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
     if (localSocket == 0) {
-        perror("socket failed");
+        if (g_logger) {
+            LOG_ERROR("Device socket creation failed: {}", strerror(errno));
+        } else {
+            perror("socket failed");
+        }
         return -1;
     }
 
     int reuse_true = 1;
     if (setsockopt(localSocket,SOL_SOCKET,SO_REUSEADDR,&reuse_true, sizeof(reuse_true)) < 0) {
-        perror("setsockopt");
+        if (g_logger) {
+            LOG_ERROR("Device setsockopt failed: {}", strerror(errno));
+        } else {
+            perror("setsockopt");
+        }
         return -1;
     }
 
-    cout << "Opened " << inet_ntoa( remoteAddress.sin_addr ) << endl;
+    if (g_logger) {
+        LOG_DEBUG("Device connection opened to {}", inet_ntoa(remoteAddress.sin_addr));
+    }
 
     struct sockaddr_in address;
     memset(&address, 0, sizeof(address));
@@ -117,12 +143,18 @@ int Device::connect() {
     address.sin_port = 0;
 
     if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        perror("bind failed");
+        if (g_logger) {
+            LOG_ERROR("Device bind failed: {}", strerror(errno));
+        } else {
+            perror("bind failed");
+        }
         return -1;
     }
 
-    cout << "Bound local[" << inet_ntoa( address.sin_addr ) << "] to remote [" 
-                           << inet_ntoa( remoteAddress.sin_addr ) << "]" << endl;
+    if (g_logger) {
+        LOG_DEBUG("Device bound local[{}] to remote [{}]", 
+                  inet_ntoa(address.sin_addr), inet_ntoa(remoteAddress.sin_addr));
+    }
 
     const auto flags = fcntl(localSocket,F_GETFL,0);
     if( flags >= 0 ) {

@@ -121,14 +121,20 @@ public:
             if (!fileStream->is_open()) {
                 throw std::runtime_error("Cannot open log file: " + rotatedFilename);
             }
+            std::cerr << "DEBUG: Opened rotated log file: " << rotatedFilename << std::endl;
         } else {
             fileStream = std::make_unique<std::ofstream>(filename, std::ios::app);
             if (!fileStream->is_open()) {
                 throw std::runtime_error("Cannot open log file: " + filename);
             }
+            std::cerr << "DEBUG: Opened log file: " << filename << std::endl;
         }
         
         logStream = fileStream.get();
+        
+        // Write a startup message to verify logging works
+        *logStream << getTimestamp() << "[INFO ] Logger initialized" << std::endl;
+        logStream->flush();
     }
     
     void setLevel(LogLevel level) {
@@ -210,11 +216,11 @@ private:
 extern Logger* g_logger;
 
 // Convenience macros
-#define LOG_DEBUG(...) if(g_logger) g_logger->debug(__VA_ARGS__)
-#define LOG_INFO(...) if(g_logger) g_logger->info(__VA_ARGS__)
-#define LOG_WARN(...) if(g_logger) g_logger->warn(__VA_ARGS__)
-#define LOG_ERROR(...) if(g_logger) g_logger->error(__VA_ARGS__)
-#define LOG_FATAL(...) if(g_logger) g_logger->fatal(__VA_ARGS__)
+#define LOG_DEBUG(...) { if(g_logger) g_logger->debug(__VA_ARGS__); }
+#define LOG_INFO(...) { if(g_logger) g_logger->info(__VA_ARGS__); }
+#define LOG_WARN(...) { if(g_logger) g_logger->warn(__VA_ARGS__); }
+#define LOG_ERROR(...) { if(g_logger) g_logger->error(__VA_ARGS__); }
+#define LOG_FATAL(...) { if(g_logger) g_logger->fatal(__VA_ARGS__); }
 
 // Initialize global logger
 inline void initLogger(LogLevel level = LogLevel::INFO, bool timestamp = true) {

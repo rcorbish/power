@@ -1,5 +1,6 @@
 
 #include "Weather.hpp"
+#include "Logger.hpp"
 
 #include <cmath>
 #include <curl/curl.h>
@@ -17,7 +18,11 @@ Weather::Weather(string zip, int pastHours, int forecastHours) {
     responseBuffer = new char[64000];
     char *api_key = getenv("WEATHER_API_KEY");
     if (api_key == nullptr) {
-        cerr << "Missing WEATHER_API_KEY environment variable" << endl;
+        if (g_logger) {
+            LOG_FATAL("Missing WEATHER_API_KEY environment variable");
+        } else {
+            cerr << "Missing WEATHER_API_KEY environment variable" << endl;
+        }
         exit(-1);
     }
     string Server("https://api.weatherapi.com/v1/");
@@ -62,8 +67,11 @@ void Weather::parseLocation(char *contents, size_t sz) {
     bool parsingSuccessful = reader->parse(p, p + sz, &root, nullptr);
 
     if (!parsingSuccessful) {
-        cerr << "Failed to parse json read\n"
-             << p << endl;
+        if (g_logger) {
+            LOG_ERROR("Failed to parse location JSON: {}", p);
+        } else {
+            cerr << "Failed to parse json read\n" << p << endl;
+        }
     }
     lon = root["location"]["lon"].asDouble();
     lat = root["location"]["lat"].asDouble();
@@ -78,8 +86,11 @@ void Weather::parseHistory(char *contents, size_t sz) {
     auto reader = builder.newCharReader();
     bool parsingSuccessful = reader->parse(p, p + sz, &root, nullptr);
     if (!parsingSuccessful) {
-        cerr << "Failed to parse json ...\n"
-             << p << endl;
+        if (g_logger) {
+            LOG_ERROR("Failed to parse weather history JSON: {}", p);
+        } else {
+            cerr << "Failed to parse json ...\n" << p << endl;
+        }
     }
     totalRecentRainfall += root["forecast"]["forecastday"][0]["day"]["totalprecip_mm"].asDouble();
 }
@@ -92,8 +103,11 @@ void Weather::parseForecast(char *contents, size_t sz) {
     auto reader = builder.newCharReader();
     bool parsingSuccessful = reader->parse(p, p + sz, &root, nullptr);
     if (!parsingSuccessful) {
-        cerr << "Failed to parse json ...\n"
-             << p << endl;
+        if (g_logger) {
+            LOG_ERROR("Failed to parse weather history JSON: {}", p);
+        } else {
+            cerr << "Failed to parse json ...\n" << p << endl;
+        }
     }
     
     forecastRainfall = root["forecast"]["forecastday"][0]["day"]["totalprecip_mm"].asDouble()

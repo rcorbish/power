@@ -13,7 +13,7 @@ add_executable(sprinklers main.cpp History.cpp Options.cpp Logger.cpp)
 target_link_libraries( sprinklers power weather )
 set_target_properties( sprinklers PROPERTIES  RUNTIME_OUTPUT_DIRECTORY ".." )
 
-add_executable(readweather readWeather.cpp Options.cpp )
+add_executable(readweather readWeather.cpp Options.cpp Logger.cpp )
 target_link_libraries( readweather weather )
 set_target_properties( readweather PROPERTIES  RUNTIME_OUTPUT_DIRECTORY ".." )
 

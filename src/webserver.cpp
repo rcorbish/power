@@ -12,6 +12,8 @@
 #include "Weather.hpp"
 #include "Options.hpp"
 #include "Configuration.hpp"
+#include "Logger.hpp"
+#include "LoggerConfig.hpp"
 
 struct mg_tls_opts tls_opts;
 struct mg_http_serve_opts html_opts;
@@ -41,6 +43,10 @@ int main( int argc, char *argv[] ){
     try {
         config.load("sprinkler.conf");
         config.validate();
+        
+        // Initialize logging from config
+        initLoggerFromConfig(config, false);
+        
     } catch (const ConfigurationException& e) {
         std::cerr << "Configuration error: " << e.what() << std::endl;
         return 1;
@@ -53,8 +59,8 @@ int main( int argc, char *argv[] ){
         con->discover();
         std::this_thread::sleep_for(std::chrono::seconds(7));
     }
-    std::cout << "Using device name: " << args.device << std::endl;
-    std::cout << "Using history file: " << args.historyFile << std::endl;
+    LOG_INFO("Using device name: {}", args.device);
+    LOG_INFO("Using history file: {}", args.historyFile);
 
     memset( &tls_opts, 0, sizeof(tls_opts));
 
@@ -86,11 +92,11 @@ int main( int argc, char *argv[] ){
     std::string webPort = "https://0.0.0.0:" + std::to_string(config.getInt("webPort"));
     nc = mg_http_listen(&mgr, webPort.c_str(), ev_handler, (void *)&args ) ;
     if (nc == nullptr) {
-        std::cerr << "Error starting server on port " << webPort << std::endl ;
+        LOG_ERROR("Error starting server on port {}", webPort);
         exit( 1 ) ;
     }
 
-    std::cout << "Starting RESTful server on port " << webPort << std::endl ;
+    LOG_INFO("Starting RESTful server on port {}", webPort);
     for (;;) {
         mg_mgr_poll(&mgr, 1000);
     }
@@ -132,13 +138,13 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data ) {
         } else {
             char addr_buf[256];
             const auto len = mg_snprintf( addr_buf, sizeof(addr_buf), "%.*s, Bad call from %M", (int)msg->uri.len, msg->uri.buf,  mg_print_ip, &nc->rem );
-            std::cerr << addr_buf << std::endl;
+            LOG_WARN("{}", addr_buf);
             mg_http_reply(nc, 400, nullptr, "");
         }
     } else if (ev == MG_EV_ACCEPT) {
         mg_tls_init( nc, &tls_opts);
     } else if (ev == MG_EV_ERROR) {
-        std::cerr << "Error: " << (char *) ev_data << std::endl ;
+        LOG_ERROR("Mongoose error: {}", (char *) ev_data);
     }
 }
 
@@ -192,7 +198,7 @@ std::string getDeviceState( const std::string &device) {
         snprintf( buffer, sizeof(buffer), "Sprinklers are %s", (isOn ? "ON" : "OFF") ); 
         return std::string(buffer);
     } catch( const std::string &e ) {
-        std::cerr << e << std::endl;
+        LOG_ERROR("Device state error: {}", e);
     }
     return "Can't get device state";
 }

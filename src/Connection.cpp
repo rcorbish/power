@@ -5,8 +5,10 @@
 #include <pthread.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <cerrno>
 
 #include "Connection.hpp"
+#include "Logger.hpp"
 #include <arpa/inet.h>
 
 using namespace std;
@@ -29,11 +31,15 @@ void Connection::recvLoop() {
         string deviceName(deviceInfo.id);
 
         if (devices.find(deviceName) == devices.end()) {
-            cout << "Adding new device " << deviceName << endl;
+            if (g_logger) {
+                LOG_INFO("Discovered new device: {}", deviceName);
+            }
             devices.emplace(deviceName, deviceInfo);
         }
     }
-    cerr << "Exited Connection receive loop !!!!" << endl;
+    if (g_logger) {
+        LOG_WARN("Exited Connection receive loop");
+    }
 }
 
 void Connection::sendMsg(const void *data, size_t length) {
@@ -50,9 +56,15 @@ void Connection::sendMsg(const void *data, size_t length) {
                        (const struct sockaddr *)&remoteAddress,
                        sizeof(remoteAddress));
     if (sz != length) {
-        perror("sendto");
+        if (g_logger) {
+            LOG_ERROR("Connection sendto failed: {}", strerror(errno));
+        } else {
+            perror("sendto");
+        }
     } else {
-        cout << "Sent " << length << " bytes to " << inet_ntoa( remoteAddress.sin_addr ) << endl;
+        if (g_logger) {
+            LOG_DEBUG("Connection sent {} bytes to {}", length, inet_ntoa(remoteAddress.sin_addr));
+        }
     }
 }
 
@@ -70,13 +82,21 @@ Connection::Connection() {
     // Prepare local socket from which we'll send and listen
     localSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
     if (localSocket == 0) {
-        perror("socket failed");
+        if (g_logger) {
+            LOG_FATAL("Connection socket creation failed: {}", strerror(errno));
+        } else {
+            perror("socket failed");
+        }
         exit(EXIT_FAILURE);
     }
 
     int opt = 1;
     if (::setsockopt(localSocket, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(opt))) {
-        perror("setsockopt");
+        if (g_logger) {
+            LOG_ERROR("Connection setsockopt failed: {}", strerror(errno));
+        } else {
+            perror("setsockopt");
+        }
         exit(EXIT_FAILURE);
     }
 
@@ -88,11 +108,17 @@ Connection::Connection() {
     address.sin_port = 0; //htons(PORT);
 
     if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        perror("bind failed");
+        if (g_logger) {
+            LOG_FATAL("Connection bind failed: {}", strerror(errno));
+        } else {
+            perror("bind failed");
+        }
         exit(EXIT_FAILURE);
     }
 
-    cout << "Listening for broadcasts on " << inet_ntoa(address.sin_addr) << endl;
+    if (g_logger) {
+        LOG_INFO("Listening for device broadcasts on {}", inet_ntoa(address.sin_addr));
+    }
     int err = pthread_create(&threadId, nullptr, &receiverThread, this);
 
 }
