@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "Options.hpp"
+#include "Exceptions.hpp"
 
 using namespace std;
 
@@ -27,7 +28,7 @@ constexpr struct option long_options[] = {
     {nullptr,   0,                 nullptr,  0 }
 } ;
 
-Args parseOptions( int argc, char **argv ) {
+Args parseOptions( int argc, char **argv, ProgramType programType ) {
     Args rc ;
     int opt ;
     while( (opt = getopt_long(argc, argv, "h:c:k:n:p:d:z:s:m:vtl", long_options, nullptr )) != -1 ) {
@@ -77,8 +78,48 @@ Args parseOptions( int argc, char **argv ) {
         }
     }
 
-    // if( rc.device.size() == 0 && !rc.list )  usage( argv[0] ) ;
-    // if( rc.state == UNKNOWN && rc.zip.size() == 0 && !rc.list )  usage( argv[0] ) ;
+    // Validate required arguments based on program type
+    switch (programType) {
+        case ProgramType::SPRINKLERS:
+            if (!rc.list) {
+                if (rc.device.empty()) {
+                    throw ConfigurationException("Device name is required (use --device or --list)");
+                }
+                
+                if (rc.state == UNKNOWN && rc.zip.empty()) {
+                    throw ConfigurationException("Either zip code (--zip) or explicit state (--state) is required");
+                }
+            }
+            break;
+            
+        case ProgramType::READWEATHER:
+            if (rc.zip.empty()) {
+                throw ConfigurationException("Zip code is required for weather reading (use --zip)");
+            }
+            break;
+            
+        case ProgramType::WEBSERVER:
+            // Webserver has minimal requirements - will get device from config
+            break;
+    }
+    
+    // Validate argument ranges
+    if (rc.desiredMMRain < 0 || rc.desiredMMRain > 100) {
+        throw ConfigurationException("desiredMMRain must be between 0 and 100mm");
+    }
+    
+    if (rc.minutesToSprinkle < 1 || rc.minutesToSprinkle > 180) {
+        throw ConfigurationException("minutesToSprinkle must be between 1 and 180 minutes");
+    }
+    
+    if (rc.previousHoursToLookForRain < 1 || rc.previousHoursToLookForRain > 168) {
+        throw ConfigurationException("previousHoursToLookForRain must be between 1 and 168 hours");
+    }
+    
+    if (rc.forecastHours < 1 || rc.forecastHours > 72) {
+        throw ConfigurationException("forecastHours must be between 1 and 72 hours");
+    }
+    
     return rc ;
 }
 

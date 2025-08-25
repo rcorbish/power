@@ -23,7 +23,7 @@
 int main( int argc, char **argv ) {
     bool turnDeviceOn = false ;
 
-    Args args = parseOptions( argc, argv ) ;
+    Args args = parseOptions( argc, argv, ProgramType::READWEATHER ) ;
 
     try {
         

@@ -27,6 +27,12 @@ typedef struct  {
 } Args ;
 
 
-Args parseOptions( int argc, char **argv ) ;
+enum class ProgramType {
+    SPRINKLERS,
+    READWEATHER, 
+    WEBSERVER
+};
+
+Args parseOptions( int argc, char **argv, ProgramType programType = ProgramType::SPRINKLERS ) ;
 
 std::string getTime() ;

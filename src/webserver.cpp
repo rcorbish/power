@@ -11,13 +11,7 @@
 #include "History.hpp"
 #include "Weather.hpp"
 #include "Options.hpp"
-
-constexpr const char *s_http_port = "https://0.0.0.0:8111";
-constexpr const char *CertFileName = "cert.pem";
-constexpr const char *KeyFileName = "key.pem";
-
-constexpr int  SecurityPort = 9111 ;
-constexpr int  Buffer_Size = 1024 ;
+#include "Configuration.hpp"
 
 struct mg_tls_opts tls_opts;
 struct mg_http_serve_opts html_opts;
@@ -37,10 +31,20 @@ Weather *weather;
 Connection *con = nullptr; 
 
 Args args;
+Configuration config;
 
 int main( int argc, char *argv[] ){
 
-    Args args = parseOptions( argc, argv );
+    Args args = parseOptions( argc, argv, ProgramType::WEBSERVER );
+    
+    // Load system configuration
+    try {
+        config.load("sprinkler.conf");
+        config.validate();
+    } catch (const ConfigurationException& e) {
+        std::cerr << "Configuration error: " << e.what() << std::endl;
+        return 1;
+    }
 
     // Open connection to the device
     con = new Connection(); 
@@ -54,8 +58,11 @@ int main( int argc, char *argv[] ){
 
     memset( &tls_opts, 0, sizeof(tls_opts));
 
-    tls_opts.cert = mg_file_read(&mg_fs_posix, args.certificateFile.c_str() );
-    tls_opts.key = mg_file_read(&mg_fs_posix, args.keyFile.c_str() );
+    std::string certFile = args.certificateFile.empty() ? config.getString("certFile") : args.certificateFile;
+    std::string keyFile = args.keyFile.empty() ? config.getString("keyFile") : args.keyFile;
+    
+    tls_opts.cert = mg_file_read(&mg_fs_posix, certFile.c_str() );
+    tls_opts.key = mg_file_read(&mg_fs_posix, keyFile.c_str() );
 
     memset( &html_opts, 0, sizeof(html_opts));
     html_opts.mime_types = "html=text/html";
@@ -76,13 +83,14 @@ int main( int argc, char *argv[] ){
 
     mg_mgr_init( &mgr ) ;
 
-    nc = mg_http_listen(&mgr, s_http_port, ev_handler, (void *)&args ) ;
+    std::string webPort = "https://0.0.0.0:" + std::to_string(config.getInt("webPort"));
+    nc = mg_http_listen(&mgr, webPort.c_str(), ev_handler, (void *)&args ) ;
     if (nc == nullptr) {
-        std::cerr << "Error starting server on port " << s_http_port << std::endl ;
+        std::cerr << "Error starting server on port " << webPort << std::endl ;
         exit( 1 ) ;
     }
 
-    std::cout << "Starting RESTful server on port " << s_http_port << std::endl ;
+    std::cout << "Starting RESTful server on port " << webPort << std::endl ;
     for (;;) {
         mg_mgr_poll(&mgr, 1000);
     }
@@ -113,7 +121,7 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data ) {
             std::string s = getDeviceState(args->device);
             mg_http_reply(nc, 200, "Content-Type: text/html\nServer: Sprinklers\r\n", "%s", s.c_str());
         } else if( mg_match(msg->uri, mg_str("/security-data"), nullptr ) ) {
-            std::string s = getSecurityInfo(SecurityPort);
+            std::string s = getSecurityInfo(config.getInt("securityPort"));
             mg_http_reply(nc, 200, "Content-Type: application/json\nServer: Sprinklers\r\n", "%s", s.c_str());
         } else if( mg_match(msg->uri, mg_str("/security"), nullptr ) ) {
             mg_http_serve_file( nc, &home, "security.html", &html_opts);
@@ -194,7 +202,8 @@ std::string getSecurityInfo( const int port) {
 
     int sock = 0;
     struct sockaddr_in serv_addr;
-    char buffer[Buffer_Size+1] = {0};
+    int bufferSize = config.getInt("bufferSize");
+    char buffer[bufferSize+1] = {0};
     
     // Create socket
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -225,7 +234,7 @@ std::string getSecurityInfo( const int port) {
     std::stringstream ss;
     int valread = 0;
     do {
-        valread = read(sock, buffer, Buffer_Size);
+        valread = read(sock, buffer, bufferSize);
         if( valread > 0 ) {
             buffer[valread] = 0;
             ss << buffer ;
