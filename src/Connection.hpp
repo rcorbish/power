@@ -18,6 +18,7 @@ class Connection {
     uint32_t sequence ;
     pthread_t threadId ;
     std::map<std::string, Device> devices ;
+    volatile bool running ;
 
     static void *receiverThread(void *self) ;
     void recvLoop() ;
@@ -28,7 +29,8 @@ class Connection {
 
   public:
     Connection() ;
-    void discover() ;
+    void startDiscovery() ;
+    void stopDiscovery() ;
     bool get( const std::string &deviceName ) ;
     void set( const std::string &deviceName, const bool on ) ;
     bool found( const std::string &deviceName ) ;

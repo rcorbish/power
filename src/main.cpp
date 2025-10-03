@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
         }
 
         LOG_DEBUG("Starting device discovery");
-        con.discover() ;
+        con.startDiscovery() ;
         if( args.list ) {
             LOG_INFO("Discovering devices...");
             this_thread::sleep_for(chrono::seconds(12));
@@ -92,6 +92,7 @@ int main(int argc, char **argv) {
                 this_thread::sleep_for(chrono::seconds(1));
             }
         }
+        con.stopDiscovery() ;
 
         bool on = con.get( args.device );
         if( on == turnDeviceOn ) {

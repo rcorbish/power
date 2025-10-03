@@ -22,7 +22,8 @@ void *Connection::receiverThread(void *self) {
 // how many response we get to a broadcast message
 void Connection::recvLoop() {
     MSG408 deviceInfo;
-    for (;;) {
+    running = true;
+    while ( running ) {
         int n = recvfrom(localSocket, &deviceInfo, sizeof(deviceInfo), 0, nullptr, nullptr);
         if (n < 0) {
             perror("recvfrom");
@@ -42,6 +43,15 @@ void Connection::recvLoop() {
     }
 }
 
+void Connection::stopDiscovery() {
+    running = false;
+    pthread_join(threadId, nullptr);
+    close(localSocket);
+    if (g_logger) {
+        LOG_DEBUG("Stopped device discovery");
+    }
+}
+
 void Connection::sendMsg(const void *data, size_t length) {
     sequence++;
 
@@ -57,7 +67,7 @@ void Connection::sendMsg(const void *data, size_t length) {
                        sizeof(remoteAddress));
     if (sz != length) {
         if (g_logger) {
-            LOG_ERROR("Connection sendto failed: {}", strerror(errno));
+            LOG_ERROR("Connection sendto sent {} of {}: {}", sz, length, strerror(errno));
         } else {
             perror("sendto");
         }
@@ -123,7 +133,7 @@ Connection::Connection() {
 
 }
 
-void Connection::discover() {
+void Connection::startDiscovery() {
     uint8_t discover[128];
 
     memset(discover, 0, sizeof(discover));

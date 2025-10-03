@@ -77,11 +77,13 @@ void Device::sendMsg(const void *data, size_t length) {
                 continue; // retry reading after delay
             } else {
                 perror( "recv" );
+                break;
             }
         }
         if( n == 0 ) {
             if (g_logger) {
                 LOG_WARN("Device connection [{}] is closed", deviceInfo.id);
+                break;
             }
         } else {
             if (g_logger) {

@@ -56,8 +56,9 @@ int main( int argc, char *argv[] ){
     con = new Connection(); 
     for( int i=0 ; i<10 ; i++ ) {
         if( con->found( args.device ) ) break;
-        con->discover();
+        con->startDiscovery();
         std::this_thread::sleep_for(std::chrono::seconds(7));
+        con->stopDiscovery();
     }
     LOG_INFO("Using device name: {}", args.device);
     LOG_INFO("Using history file: {}", args.historyFile);
