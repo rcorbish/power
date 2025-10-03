@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <cerrno>
+#include <unistd.h>
 
 #include "Connection.hpp"
 #include "Logger.hpp"
@@ -46,7 +47,11 @@ void Connection::recvLoop() {
 void Connection::stopDiscovery() {
     running = false;
     pthread_join(threadId, nullptr);
-    close(localSocket);
+    if (localSocket >= 0) {
+        shutdown(localSocket, SHUT_RDWR);
+        close(localSocket);
+        localSocket = -1;
+    }
     if (g_logger) {
         LOG_DEBUG("Stopped device discovery");
     }
