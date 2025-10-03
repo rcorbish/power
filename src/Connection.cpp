@@ -27,7 +27,7 @@ void Connection::recvLoop() {
     while ( running ) {
         int n = recvfrom(localSocket, &deviceInfo, sizeof(deviceInfo), 0, nullptr, nullptr);
         if (n < 0) {
-            perror("recvfrom");
+            LOG_WARN("recvfrom failed: {}", strerror(errno));
             break;
         }
         string deviceName(deviceInfo.id);
@@ -46,12 +46,12 @@ void Connection::recvLoop() {
 
 void Connection::stopDiscovery() {
     running = false;
-    pthread_join(threadId, nullptr);
     if (localSocket >= 0) {
         shutdown(localSocket, SHUT_RDWR);
         close(localSocket);
         localSocket = -1;
     }
+    pthread_join(threadId, nullptr);
     if (g_logger) {
         LOG_DEBUG("Stopped device discovery");
     }
