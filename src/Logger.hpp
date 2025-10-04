@@ -42,25 +42,25 @@ private:
         if (!timestampEnabled) return "";
         
         time_t rawtime;
-        struct tm * timeinfo;
+        struct tm timeinfo_storage;
         char buffer[128];
-        
+
         time(&rawtime);
-        timeinfo = localtime(&rawtime);
+        struct tm* timeinfo = localtime_r(&rawtime, &timeinfo_storage);
         strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
-        
+
         return std::string(buffer) + " ";
     }
     
     std::string getCurrentDate() const {
         time_t rawtime;
-        struct tm * timeinfo;
+        struct tm timeinfo_storage;
         char buffer[32];
-        
+
         time(&rawtime);
-        timeinfo = localtime(&rawtime);
+        struct tm* timeinfo = localtime_r(&rawtime, &timeinfo_storage);
         strftime(buffer, sizeof(buffer), "%Y%m%d", timeinfo);
-        
+
         return std::string(buffer);
     }
     

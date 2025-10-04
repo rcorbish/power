@@ -1,5 +1,6 @@
 
 #include "Weather.hpp"
+#include "Exceptions.hpp"
 #include "Logger.hpp"
 
 #include <cmath>
@@ -20,10 +21,8 @@ Weather::Weather(string zip, int pastHours, int forecastHours) {
     if (api_key == nullptr) {
         if (g_logger) {
             LOG_FATAL("Missing WEATHER_API_KEY environment variable");
-        } else {
-            cerr << "Missing WEATHER_API_KEY environment variable" << endl;
         }
-        exit(-1);
+        throw ConfigurationException("Missing WEATHER_API_KEY environment variable");
     }
     string Server("https://api.weatherapi.com/v1/");
 
@@ -137,7 +136,8 @@ void Weather::read() {
         auto now = time(nullptr);   // get time now
         // We'll look back N days of history for rainfall
         for (int i = 0 ; i<daysOfHistory ; i++) {
-            auto ts = localtime(&now);
+            struct tm ts_storage;
+            auto ts = localtime_r(&now, &ts_storage);
             ts->tm_mday -= i;
             mktime(ts); /* Normalise ts */
             char dateBuf[128] ;
@@ -167,7 +167,7 @@ void Weather::sendUrlRequest(void *x, const char *url, size_t (*write_callback)(
     CURLcode res = curl_easy_perform(curl);
     /* Check for errors */
     if (res != CURLE_OK)
-        throw string(curl_easy_strerror(res));
+        throw WeatherException("api_request", curl_easy_strerror(res));
 }
 
 double Weather::getRecentRainfall() const {

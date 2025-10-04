@@ -59,7 +59,9 @@ void Device::sendMsg(const void *data, size_t length) {
         }
     } else {
         if (g_logger) {
-            LOG_DEBUG("Device sent {} bytes to {}", length, inet_ntoa(remoteAddress.sin_addr));
+            char addr_str[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
+            LOG_DEBUG("Device sent {} bytes to {}", length, addr_str);
         }
     }
 
@@ -109,12 +111,14 @@ Device::Device(const MSG408 &deviceInfo) : deviceInfo(deviceInfo) {
 
 int Device::connect() {
     if (g_logger) {
-        LOG_INFO("Opening connection to device {} [{}]", deviceInfo.id, inet_ntoa(remoteAddress.sin_addr));
+        char addr_str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
+        LOG_INFO("Opening connection to device {} [{}]", deviceInfo.id, addr_str);
     }
 
     // Prepare local socket from which we'll send and listen
     int localSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
-    if (localSocket == 0) {
+    if (localSocket < 0) {
         if (g_logger) {
             LOG_ERROR("Device socket creation failed: {}", strerror(errno));
         } else {
@@ -130,11 +134,14 @@ int Device::connect() {
         } else {
             perror("setsockopt");
         }
+        close(localSocket);
         return -1;
     }
 
     if (g_logger) {
-        LOG_DEBUG("Device connection opened to {}", inet_ntoa(remoteAddress.sin_addr));
+        char addr_str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
+        LOG_DEBUG("Device connection opened to {}", addr_str);
     }
 
     struct sockaddr_in address;
@@ -150,12 +157,16 @@ int Device::connect() {
         } else {
             perror("bind failed");
         }
+        close(localSocket);
         return -1;
     }
 
     if (g_logger) {
-        LOG_DEBUG("Device bound local[{}] to remote [{}]", 
-                  inet_ntoa(address.sin_addr), inet_ntoa(remoteAddress.sin_addr));
+        char local_addr[INET_ADDRSTRLEN];
+        char remote_addr[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &address.sin_addr, local_addr, sizeof(local_addr));
+        inet_ntop(AF_INET, &remoteAddress.sin_addr, remote_addr, sizeof(remote_addr));
+        LOG_DEBUG("Device bound local[{}] to remote [{}]", local_addr, remote_addr);
     }
 
     const auto flags = fcntl(localSocket,F_GETFL,0);

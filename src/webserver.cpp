@@ -94,7 +94,7 @@ int main( int argc, char *argv[] ){
     nc = mg_http_listen(&mgr, webPort.c_str(), ev_handler, (void *)&args ) ;
     if (nc == nullptr) {
         LOG_ERROR("Error starting server on port {}", webPort);
-        exit( 1 ) ;
+        return 1;
     }
 
     LOG_INFO("Starting RESTful server on port {}", webPort);
@@ -196,10 +196,10 @@ std::string getDeviceState( const std::string &device) {
         bool isOn = con->get(device) ;
 
         char buffer[128];
-        snprintf( buffer, sizeof(buffer), "Sprinklers are %s", (isOn ? "ON" : "OFF") ); 
+        snprintf( buffer, sizeof(buffer), "Sprinklers are %s", (isOn ? "ON" : "OFF") );
         return std::string(buffer);
-    } catch( const std::string &e ) {
-        LOG_ERROR("Device state error: {}", e);
+    } catch( const std::exception &e ) {
+        LOG_ERROR("Device state error: {}", e.what());
     }
     return "Can't get device state";
 }

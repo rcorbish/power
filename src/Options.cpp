@@ -137,19 +137,19 @@ void usage( char *argv0 ) {
 
     cerr << "Options --certFile & --keyFile are for https params for webserver" << endl ;
     cerr << "Options --histFile is where the weather & sprinkling history is stored" << endl ;
-    
-    exit(-1) ;
+
+    throw ConfigurationException("Invalid command-line arguments");
 }
 
 
 
 std::string getTime() {
     time_t rawtime;
-    struct tm * timeinfo;
-    char buffer [128]; 
+    struct tm timeinfo_storage;
+    char buffer [128];
 
     time( &rawtime );
-    timeinfo = localtime( &rawtime ) ;
+    struct tm* timeinfo = localtime_r( &rawtime, &timeinfo_storage );
 
     strftime (buffer,80,"%Y-%m-%d %H:%M:%S ",timeinfo);
 

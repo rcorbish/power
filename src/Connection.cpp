@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "Connection.hpp"
+#include "Exceptions.hpp"
 #include "Logger.hpp"
 #include <arpa/inet.h>
 
@@ -32,11 +33,14 @@ void Connection::recvLoop() {
         }
         string deviceName(deviceInfo.id);
 
-        if (devices.find(deviceName) == devices.end()) {
-            if (g_logger) {
-                LOG_INFO("Discovered new device: {}", deviceName);
+        {
+            std::lock_guard<std::mutex> lock(devicesMutex);
+            if (devices.find(deviceName) == devices.end()) {
+                if (g_logger) {
+                    LOG_INFO("Discovered new device: {}", deviceName);
+                }
+                devices.emplace(deviceName, deviceInfo);
             }
-            devices.emplace(deviceName, deviceInfo);
         }
     }
     if (g_logger) {
@@ -78,15 +82,18 @@ void Connection::sendMsg(const void *data, size_t length) {
         }
     } else {
         if (g_logger) {
-            LOG_DEBUG("Connection sent {} bytes to {}", length, inet_ntoa(remoteAddress.sin_addr));
+            char addr_str[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
+            LOG_DEBUG("Connection sent {} bytes to {}", length, addr_str);
         }
     }
 }
 
 Device &Connection::getDevice(const std::string &deviceName) {
+    std::lock_guard<std::mutex> lock(devicesMutex);
     auto it = devices.find(deviceName);
     if (it == devices.end()) {
-        throw(deviceName + " not connected");
+        throw DeviceException(deviceName, "not connected");
     }
     return it->second;
 }
@@ -96,23 +103,20 @@ Connection::Connection() {
 
     // Prepare local socket from which we'll send and listen
     localSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
-    if (localSocket == 0) {
+    if (localSocket < 0) {
         if (g_logger) {
             LOG_FATAL("Connection socket creation failed: {}", strerror(errno));
-        } else {
-            perror("socket failed");
         }
-        exit(EXIT_FAILURE);
+        throw NetworkException(errno, "Socket creation failed");
     }
 
     int opt = 1;
     if (::setsockopt(localSocket, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(opt))) {
         if (g_logger) {
             LOG_ERROR("Connection setsockopt failed: {}", strerror(errno));
-        } else {
-            perror("setsockopt");
         }
-        exit(EXIT_FAILURE);
+        close(localSocket);
+        throw NetworkException(errno, "setsockopt failed");
     }
 
     struct sockaddr_in address;
@@ -125,16 +129,24 @@ Connection::Connection() {
     if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
         if (g_logger) {
             LOG_FATAL("Connection bind failed: {}", strerror(errno));
-        } else {
-            perror("bind failed");
         }
-        exit(EXIT_FAILURE);
+        close(localSocket);
+        throw NetworkException(errno, "bind failed");
     }
 
     if (g_logger) {
-        LOG_INFO("Listening for device broadcasts on {}", inet_ntoa(address.sin_addr));
+        char addr_str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &address.sin_addr, addr_str, sizeof(addr_str));
+        LOG_INFO("Listening for device broadcasts on {}", addr_str);
     }
     int err = pthread_create(&threadId, nullptr, &receiverThread, this);
+    if (err != 0) {
+        close(localSocket);
+        if (g_logger) {
+            LOG_FATAL("Failed to create receiver thread: {}", strerror(err));
+        }
+        throw NetworkException(err, "Thread creation failed");
+    }
 
 }
 
@@ -161,6 +173,7 @@ bool Connection::get(const std::string &deviceName) {
 }
 
 bool Connection::found(const std::string &deviceName) {
+    std::lock_guard<std::mutex> lock(devicesMutex);
     auto it = devices.find(deviceName);
     return (it != devices.end()) ;
 }

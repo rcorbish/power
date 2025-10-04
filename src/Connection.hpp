@@ -5,6 +5,8 @@
 #include <string>
 #include <pthread.h>
 #include <map>
+#include <mutex>
+#include <atomic>
 
 #include "Device.hpp"
 
@@ -18,7 +20,8 @@ class Connection {
     uint32_t sequence ;
     pthread_t threadId ;
     std::map<std::string, Device> devices ;
-    volatile bool running ;
+    mutable std::mutex devicesMutex;
+    std::atomic<bool> running;
 
     static void *receiverThread(void *self) ;
     void recvLoop() ;
@@ -34,6 +37,9 @@ class Connection {
     bool get( const std::string &deviceName ) ;
     void set( const std::string &deviceName, const bool on ) ;
     bool found( const std::string &deviceName ) ;
-    std::map<std::string, Device> list() const { return devices ; } 
+    std::map<std::string, Device> list() const {
+        std::lock_guard<std::mutex> lock(devicesMutex);
+        return devices;
+    } 
 } ;
 

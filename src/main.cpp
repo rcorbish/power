@@ -147,14 +147,6 @@ int main(int argc, char **argv) {
             cerr << "Fatal error: " << e.what() << endl;
         }
         return -2;
-    } catch( string err ) {
-        if (g_logger) {
-            LOG_FATAL("Legacy error: {}", err);
-            shutdownLogger();
-        } else {
-            cerr << "Error: " << err << endl;
-        }
-        return -2;
     }    
     return 0 ;
 }

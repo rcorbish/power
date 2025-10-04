@@ -35,9 +35,9 @@ int main( int argc, char **argv ) {
 
         std::cout << getTime() << std::setw(8) << args.zip << std::setw(8) << totalRain << std::setw(8) << forecastRain << std::endl ;
         
-    } catch( std::string err ) {
-        std::cerr << err << std::endl ;
-        exit( -2 ) ;
+    } catch( const std::exception& err ) {
+        std::cerr << err.what() << std::endl ;
+        return -2;
     }    
     return 0 ;
 }
