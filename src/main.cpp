@@ -117,8 +117,8 @@ int main(int argc, char **argv) {
                 this_thread::sleep_for(chrono::minutes(args.minutesToSprinkle));
             }
 
-            LOG_INFO("Ensuring device is turned OFF");
             while(on) {
+                LOG_INFO("Ensuring device is turned OFF");
                 con.set( args.device, false ) ;
                 this_thread::sleep_for(chrono::seconds(10));
                 on = con.get( args.device ) ;
