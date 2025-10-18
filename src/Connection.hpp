@@ -27,7 +27,8 @@ class Connection {
     void recvLoop() ;
 
   protected:
-    void sendMsg( const void *data, size_t length) ;
+    void sendMsg( const void *data, size_t length ) ;
+    void recvMsg() ;
     Device & getDevice( const std::string &deviceName ) ;
 
   public:

@@ -89,7 +89,11 @@ void Device::sendMsg(const void *data, size_t length) {
             }
         } else {
             if (g_logger) {
-                LOG_DEBUG("Device read {} bytes from remote", n);
+                stringstream ss;  
+                for( int i = 0 ; i < n ; i++ ) {
+                    ss << hex << setw(2) << setfill('0') << (int)msg[i] << " " ;
+                }
+                LOG_DEBUG("Device received {} bytes: {}", n, ss.str() );
             }
         }
         if( n == 130 ) {
@@ -106,7 +110,15 @@ Device::Device(const MSG408 &deviceInfo) : deviceInfo(deviceInfo) {
     // Setup a remote address for the device
     memset(&remoteAddress, 0, sizeof(remoteAddress));
     int n = inet_pton(AF_INET, deviceInfo.host, &remoteAddress.sin_addr);
-    remoteAddress.sin_port = htons(80);
+    if( n <= 0 ) {
+        if (g_logger) {
+            LOG_ERROR("Device inet_pton failed for {}: {}", deviceInfo.host, (n == 0 ? "invalid address" : strerror(errno)));
+        } else {
+            perror("inet_pton failed");
+        }
+    } else {
+        remoteAddress.sin_port = htons(80);
+    }   
 }
 
 int Device::connect() {
@@ -263,7 +275,7 @@ void Device::set(bool switchOn) {
     *p++ = 0x00;
 
     //long t = time( nullptr ) ;
-    long now = (1000L * time(nullptr)) & 0xffffffff;
+    unsigned long now = (1000L * time(nullptr)) & 0xffffffff;
     *p++ = now & 0xff;
     *p++ = (now & 0x0000ff00) >> 8;
     *p++ = (now & 0x00ff0000) >> 16;

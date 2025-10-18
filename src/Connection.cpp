@@ -23,25 +23,9 @@ void *Connection::receiverThread(void *self) {
 // This runs in a thread - since we have no idea
 // how many response we get to a broadcast message
 void Connection::recvLoop() {
-    MSG408 deviceInfo;
     running = true;
     while ( running ) {
-        int n = recvfrom(localSocket, &deviceInfo, sizeof(deviceInfo), 0, nullptr, nullptr);
-        if (n < 0) {
-            LOG_WARN("recvfrom failed: {}", strerror(errno));
-            break;
-        }
-        string deviceName(deviceInfo.id);
-
-        {
-            std::lock_guard<std::mutex> lock(devicesMutex);
-            if (devices.find(deviceName) == devices.end()) {
-                if (g_logger) {
-                    LOG_INFO("Discovered new device: {}", deviceName);
-                }
-                devices.emplace(deviceName, deviceInfo);
-            }
-        }
+        recvMsg();   
     }
     if (g_logger) {
         LOG_WARN("Exited Connection receive loop");
@@ -58,6 +42,23 @@ void Connection::stopDiscovery() {
     pthread_join(threadId, nullptr);
     if (g_logger) {
         LOG_DEBUG("Stopped device discovery");
+    }
+}
+
+void Connection::recvMsg() {
+    MSG408 deviceInfo;
+    int n = recvfrom(localSocket, &deviceInfo, sizeof(deviceInfo), 0, nullptr, nullptr);
+    if (n < 0) {
+        LOG_WARN("recvfrom failed: {}", strerror(errno));
+    } else {
+        std::lock_guard<std::mutex> lock(devicesMutex);
+        string deviceName(deviceInfo.id);
+        if (devices.find(deviceName) == devices.end()) {
+            if (g_logger) {
+                LOG_INFO("Discovered new device: {}", deviceName);
+            }
+            devices.emplace(deviceName, deviceInfo);
+        }
     }
 }
 
