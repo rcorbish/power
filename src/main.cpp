@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
                     }
                 } 
 
-                LOG_INFO("Sprinkling for {} minutes", args.minutesToSprinkle);
+                LOG_INFO("Confirmed ON. Sprinkling for {} minutes", args.minutesToSprinkle);
                 this_thread::sleep_for(chrono::minutes(args.minutesToSprinkle));
             }
 
