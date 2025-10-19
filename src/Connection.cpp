@@ -47,11 +47,13 @@ void Connection::stopDiscovery() {
 }
 
 void Connection::recvMsg() {
-    MSG408 deviceInfo;
-    int n = recvfrom(localSocket, &deviceInfo, sizeof(deviceInfo), 0, nullptr, nullptr);
+    uint8_t msg[1024];
+    int n = recvfrom(localSocket, &msg, sizeof(msg), 0, nullptr, nullptr);
     if (n < 0) {
         LOG_WARN("recvfrom failed: {}", strerror(errno));
     } else if ( n == sizeof(MSG408) ) {
+        MSG408 deviceInfo;
+        memcpy((void *)&deviceInfo, (void *)msg, sizeof(MSG408));
         std::lock_guard<std::mutex> lock(devicesMutex);
         string deviceName(deviceInfo.id);
         if (devices.find(deviceName) == devices.end()) {
