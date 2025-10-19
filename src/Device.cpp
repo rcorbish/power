@@ -70,7 +70,7 @@ void Device::sendMsg(const void *data, size_t length) {
                 LOG_DEBUG("Device received {} bytes: {}", n, ss.str() );
             }        
             if( n == 130 ) {
-                isOn = msg[129] != 0;
+                isOn = msg[128] != 0;
                 getReady = true;
                 break;
             }
