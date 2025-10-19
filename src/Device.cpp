@@ -44,38 +44,38 @@ void Device::sendMsg(const void *data, size_t length) {
         }
     }
 
-    auto watchdog = 10 ;
-    uint8_t msg[1024];
+    // auto watchdog = 10 ;
+    // uint8_t msg[1024];
 
-    while( true ) {
-        auto n = recv(localSocket, msg, sizeof(msg), MSG_DONTWAIT);
-        if( n < 0 ) {
-            if( errno == EAGAIN || errno == EWOULDBLOCK ) {
-                if( --watchdog == 0 ) {
-                    break;
-                }
-                this_thread::sleep_for(chrono::milliseconds(250));
-                continue; // retry reading after delay
-            } else {
-                perror( "recv" );
-                break;
-            }
-        }
-        if( n > 0 ) {
-            if (g_logger) {
-                stringstream ss;  
-                for( int i = 0 ; i < n ; i++ ) {
-                    ss << hex << setw(2) << setfill('0') << (int)msg[i] << " " ;
-                }
-                LOG_DEBUG("Device received {} bytes: {}", n, ss.str() );
-            }        
-            if( n == 130 ) {
-                isOn = (msg[128] == 1) && (msg[129] != 0);
-                getReady = true;
-                break;
-            }
-        }
-    }
+    // while( true ) {
+    //     auto n = recv(localSocket, msg, sizeof(msg), MSG_DONTWAIT);
+    //     if( n < 0 ) {
+    //         if( errno == EAGAIN || errno == EWOULDBLOCK ) {
+    //             if( --watchdog == 0 ) {
+    //                 break;
+    //             }
+    //             this_thread::sleep_for(chrono::milliseconds(250));
+    //             continue; // retry reading after delay
+    //         } else {
+    //             perror( "recv" );
+    //             break;
+    //         }
+    //     }
+    //     if( n > 0 ) {
+    //         if (g_logger) {
+    //             stringstream ss;  
+    //             for( int i = 0 ; i < n ; i++ ) {
+    //                 ss << hex << setw(2) << setfill('0') << (int)msg[i] << " " ;
+    //             }
+    //             LOG_DEBUG("Device received {} bytes: {}", n, ss.str() );
+    //         }        
+    //         if( n == 130 ) {
+    //             isOn = (msg[128] == 1) && (msg[129] != 0);
+    //             getReady = true;
+    //             break;
+    //         }
+    //     }
+    // }
     close( localSocket );
 }
 

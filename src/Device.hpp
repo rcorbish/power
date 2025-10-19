@@ -57,6 +57,10 @@ class Device {
     bool get() ;
     void set( bool switchOn ) ;
 
+    void updateState( const bool on ) {
+        isOn = on ;
+    }
+    
     Device operator =( const Device &other ) { 
         if (this != &other) {
             memcpy((void *)this, (void *)&other, sizeof(Device));

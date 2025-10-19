@@ -1,6 +1,7 @@
 
 #include <ctime>
 #include <iostream>
+#include <iomanip>
 #include <map>
 #include <pthread.h>
 #include <string.h>
@@ -50,7 +51,7 @@ void Connection::recvMsg() {
     int n = recvfrom(localSocket, &deviceInfo, sizeof(deviceInfo), 0, nullptr, nullptr);
     if (n < 0) {
         LOG_WARN("recvfrom failed: {}", strerror(errno));
-    } else {
+    } else if ( n == sizeof(MSG408) ) {
         std::lock_guard<std::mutex> lock(devicesMutex);
         string deviceName(deviceInfo.id);
         if (devices.find(deviceName) == devices.end()) {
@@ -58,6 +59,38 @@ void Connection::recvMsg() {
                 LOG_INFO("Discovered new device: {}", deviceName);
             }
             devices.emplace(deviceName, deviceInfo);
+        }
+    } else if( n == 128) {
+        // Ignore discovery responses
+    } else if( n == 130 ) {
+        uint8_t msg[130];
+        if (g_logger) {
+            stringstream ss;  
+            for( int i = 0 ; i < n ; i++ ) {
+                ss << hex << setw(2) << setfill('0') << (int)msg[i] << " " ;
+            }
+            LOG_DEBUG("Device received {} bytes: {}", n, ss.str() );
+        }        
+        if( n == 130 ) {
+            const auto isOn = (msg[128] == 1) && (msg[129] != 0);
+            const auto deviceId = string((char *)&msg[4], 32);
+            std::lock_guard<std::mutex> lock(devicesMutex);
+            auto it = devices.find(deviceId);
+            if (it != devices.end()) {
+                it->second.updateState(isOn);
+                if (g_logger) {
+                    LOG_INFO("Updated device [{}] state to {}", deviceId, isOn ? "ON" : "OFF");
+                }   
+            } else {
+                if (g_logger) {
+                    LOG_ERROR("Unknown device [{}] sent state update", deviceId);
+                }
+            }
+        }
+        
+    } else {
+        if (g_logger) {
+            LOG_WARN("Received unexpected message of {} bytes", n);
         }
     }
 }

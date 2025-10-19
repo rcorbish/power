@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
                 this_thread::sleep_for(chrono::seconds(1));
             }
         }
-        con.stopDiscovery() ;
+        // con.stopDiscovery() ;
 
         bool on = con.get( args.device );
         if( on == turnDeviceOn ) {
