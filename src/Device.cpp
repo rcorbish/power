@@ -21,28 +21,6 @@
 
 using namespace std;
 
-// void *Device::receiverThread(void *self) {
-//     ((Device *)self)->recvLoop();
-//     return nullptr;
-// }
-
-// void Device::recvLoop() {
-//     uint8_t msg[1024];
-//     for (;;) {
-//         int n = recvfrom(localSocket, msg, sizeof(msg), 0, nullptr, nullptr);
-//         if( n == 130 ) {
-//             getReady = true;
-//             isOn = msg[129] != 0;
-//         }
-//         if( n == 0 ) {
-//             if (g_logger) {
-//                LOG_WARN("Device connection [{}] is closed", deviceInfo.id);
-//            }
-//         }
-//     }
-//     cerr << "Exited Device receive loop !!!!" << endl;
-// }
-
 void Device::sendMsg(const void *data, size_t length) {
     sequence++;
   
@@ -83,24 +61,19 @@ void Device::sendMsg(const void *data, size_t length) {
                 break;
             }
         }
-        if( n == 0 ) {
-            if (g_logger) {
-                LOG_WARN("Device connection [{}] is closed", deviceInfo.id);
-                break;
-            }
-        } else {
+        if( n > 0 ) {
             if (g_logger) {
                 stringstream ss;  
                 for( int i = 0 ; i < n ; i++ ) {
                     ss << hex << setw(2) << setfill('0') << (int)msg[i] << " " ;
                 }
                 LOG_DEBUG("Device received {} bytes: {}", n, ss.str() );
+            }        
+            if( n == 130 ) {
+                isOn = msg[129] != 0;
+                getReady = true;
+                break;
             }
-        }
-        if( n == 130 ) {
-            isOn = msg[129] != 0;
-            getReady = true;
-            break;
         }
     }
     close( localSocket );
@@ -197,12 +170,11 @@ bool Device::get() {
     uint8_t *p = msg;
     *p++ = 0x17;
     *p++ = 0x00;
-
     *p++ = 0x05;
     *p++ = 0x00;
-    *p++ = 0x00;
-    *p++ = 0x00;
 
+    *p++ = 0x00;
+    *p++ = 0x00;
     *p++ = (sequence & 0xff00) >> 8;
     *p++ = sequence & 0x00ff;
 
@@ -247,18 +219,18 @@ void Device::set(bool switchOn) {
     uint8_t msg[130];
 
     uint8_t *p = msg;
-    *p++ = 0x16;
-    *p++ = 0x00;
 
+    *p++ = 0x16;    // command: set state
+    *p++ = 0x00;
     *p++ = 0x05;
     *p++ = 0x00;
-    *p++ = 0x00;
-    *p++ = 0x00;
 
+    *p++ = 0x00;    // sequence
+    *p++ = 0x00;
     *p++ = (sequence & 0xff00) >> 8;
     *p++ = sequence & 0x00ff;
 
-    *p++ = 0x02;
+    *p++ = 0x02;    // payload length
     *p++ = 0x00;
 
     memcpy(p, deviceInfo.version, sizeof(deviceInfo.version));
