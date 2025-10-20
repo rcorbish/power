@@ -54,13 +54,16 @@ class Device {
   public:
     Device( const MSG408 &deviceInfo ) ;
 
-    bool get() ;
+    void get() ;
     void set( bool switchOn ) ;
 
     void updateState( const bool on ) {
         isOn = on ;
+    }    
+    bool state() const {
+        return isOn;
     }
-    
+
     Device operator =( const Device &other ) { 
         if (this != &other) {
             memcpy((void *)this, (void *)&other, sizeof(Device));

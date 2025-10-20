@@ -163,7 +163,7 @@ int Device::connect() {
     return localSocket;
 }
 
-bool Device::get() {
+void Device::get() {
     getReady = false;
     uint8_t msg[128];
 
@@ -212,7 +212,6 @@ bool Device::get() {
     *p++ = 0xef;
 
     sendMsg(msg, sizeof(msg));
-    return isOn;
 }
 
 void Device::set(bool switchOn) {
