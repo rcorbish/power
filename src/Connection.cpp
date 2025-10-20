@@ -48,7 +48,10 @@ void Connection::stopDiscovery() {
 
 void Connection::recvMsg() {
     uint8_t msg[1024];
-    int n = recvfrom(localSocket, &msg, sizeof(msg), 0, nullptr, nullptr);
+    struct sockaddr_in remote_addr; 
+    socklen_t remote_addr_len = sizeof(remote_addr);
+
+    int n = recvfrom(localSocket, &msg, sizeof(msg), MSG_WAITALL, (struct sockaddr *)&remote_addr, &remote_addr_len);
     if (n < 0) {
         LOG_WARN("recvfrom failed: {}", strerror(errno));
     } else if ( n == sizeof(MSG408) ) {
@@ -106,7 +109,7 @@ void Connection::sendMsg(const void *data, size_t length) {
     remoteAddress.sin_port = htons(25);
     remoteAddress.sin_addr.s_addr = INADDR_BROADCAST;
 
-    size_t sz = sendto(localSocket, data, length,
+    ssize_t sz = sendto(localSocket, data, length,
                        0,
                        (const struct sockaddr *)&remoteAddress,
                        sizeof(remoteAddress));
@@ -160,7 +163,7 @@ Connection::Connection() {
     // Bind the local socket to listen on any address
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(9000);
+    address.sin_port = 9000;
 
     if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
         if (g_logger) {

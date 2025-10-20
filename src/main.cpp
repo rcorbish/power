@@ -81,16 +81,20 @@ int main(int argc, char **argv) {
         if( args.list ) {
             LOG_INFO("Discovering devices...");
             this_thread::sleep_for(chrono::seconds(12));
-            LOG_INFO("Found devices:");
+            con.stopDiscovery ();   
+            LOG_INFO("Found {} devices", con.list().size());
             for( auto entry : con.list() ) {
                 LOG_INFO("  {}", entry.first);
             }
+            return 0;  // just listing print & bail out
         } else { 
             LOG_DEBUG("Looking for device: {}", args.device);
             for( int i=0 ; i<20 ; i++ ) {
                 if( con.found( args.device ) ) break ;
                 this_thread::sleep_for(chrono::seconds(1));
             }
+            con.stopDiscovery ();   
+            return -1;
         }
         // con.stopDiscovery() ;
 

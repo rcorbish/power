@@ -35,6 +35,7 @@ Connection *con = nullptr;
 Args args;
 Configuration config;
 
+using namespace std;
 int main( int argc, char *argv[] ){
 
     Args args = parseOptions( argc, argv, ProgramType::WEBSERVER );
@@ -54,12 +55,37 @@ int main( int argc, char *argv[] ){
 
     // Open connection to the device
     con = new Connection(); 
-    for( int i=0 ; i<10 ; i++ ) {
-        if( con->found( args.device ) ) break;
-        con->startDiscovery();
-        std::this_thread::sleep_for(std::chrono::seconds(7));
-        con->stopDiscovery();
+    con->startDiscovery();
+
+    if( args.list ) {
+        LOG_INFO("Discovering devices...");
+        this_thread::sleep_for(chrono::seconds(12));
+        con->stopDiscovery ();   
+        LOG_INFO("Found {} devices", con->list().size());
+        for( auto entry : con->list() ) {
+            LOG_INFO("  {}", entry.first);
+        }
+        return 0;  // just listing print & bail out
+    } else { 
+        LOG_DEBUG("Looking for device: {}", args.device);
+        for( int i=0 ; i<20 ; i++ ) {
+            if( con->found( args.device ) ) break ;
+            this_thread::sleep_for(chrono::seconds(1));
+        }
+        if( !con->found( args.device ) ) {
+            LOG_ERROR("Device {} not found after discovery period. Game over.", args.device);
+            con->stopDiscovery ();   
+            return -1;
+        }
     }
+    //     // con.stopDiscovery() ;
+
+    // for( int i=0 ; i<10 ; i++ ) {
+    //     if( con->found( args.device ) ) break;
+    //     std::this_thread::sleep_for(std::chrono::seconds(7));
+    //     // con->stopDiscovery();
+    // }
+
     LOG_INFO("Using device name: {}", args.device);
     LOG_INFO("Using history file: {}", args.historyFile);
 
