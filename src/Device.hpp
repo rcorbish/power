@@ -45,8 +45,8 @@ class Device {
     struct sockaddr_in remoteAddress;
     uint32_t sequence ;
     pthread_t threadId ;
-    uint8_t getReady ;
-    bool isOn ;
+    volatile bool isReady ;
+    volatile bool isOn ;
 
   protected:
     void sendMsg( const void *data, size_t length ) ;
@@ -58,9 +58,15 @@ class Device {
     void set( bool switchOn ) ;
 
     void updateState( const bool on ) {
-        isOn = on ;
+        isOn = on;
+        isReady = true;
     }    
+    
     bool state() const {
+        while( isReady == false ) {
+            struct timespec req = {0, 10000000L}; // 10ms
+            nanosleep( &req, nullptr );
+        }
         return isOn;
     }
 
