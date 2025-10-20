@@ -93,8 +93,11 @@ int main(int argc, char **argv) {
                 if( con.found( args.device ) ) break ;
                 this_thread::sleep_for(chrono::seconds(1));
             }
-            con.stopDiscovery ();   
-            return -1;
+            if( !con.found( args.device ) ) {
+                LOG_ERROR("Device {} not found after discovery period. Game over.", args.device);
+                con.stopDiscovery ();   
+                return -1;
+            }
         }
         // con.stopDiscovery() ;
 
