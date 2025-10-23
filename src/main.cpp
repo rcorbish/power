@@ -83,8 +83,8 @@ int main(int argc, char **argv) {
             this_thread::sleep_for(chrono::seconds(12));
             con.stopDiscovery ();   
             LOG_INFO("Found {} devices", con.list().size());
-            for( auto entry : con.list() ) {
-                LOG_INFO("  {}", entry.first);
+            for( const auto &deviceName : con.list() ) {
+                LOG_INFO("  {}", deviceName);
             }
             return 0;  // just listing print & bail out
         } else { 

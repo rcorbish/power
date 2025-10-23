@@ -40,13 +40,12 @@ class Device {
   friend std::ostream & operator<<( std::ostream &os, const Device &con ) ;
 
   private:
-    const MSG408 deviceInfo ;
+    MSG408 deviceInfo ;
 
     struct sockaddr_in remoteAddress;
     uint32_t sequence ;
-    pthread_t threadId ;
-    volatile bool isReady ;
-    volatile bool isOn ;
+    std::atomic<bool> isReady ;
+    std::atomic<bool> isOn ;
 
   protected:
     void sendMsg( const void *data, size_t length ) ;
@@ -58,21 +57,25 @@ class Device {
     void set( bool switchOn ) ;
 
     void updateState( const bool on ) {
-        isOn = on;
-        isReady = true;
+        isOn.store(on);
+        isReady.store(true);
     }    
     
     bool state() const {
-        while( isReady == false ) {
+        while( isReady.load() == false ) {
             struct timespec req = {0, 10000000L}; // 10ms
             nanosleep( &req, nullptr );
         }
-        return isOn;
+        return isOn.load();
     }
 
-    Device operator =( const Device &other ) { 
+    Device &operator =( const Device &other ) { 
         if (this != &other) {
-            memcpy((void *)this, (void *)&other, sizeof(Device));
+            memcpy(&(this->deviceInfo), &other.deviceInfo, sizeof(deviceInfo));
+            memcpy(&(this->remoteAddress), &other.remoteAddress, sizeof(remoteAddress));
+            this->sequence = other.sequence;
+            this->isReady.store(other.isReady.load());
+            this->isOn.store(other.isOn.load());
         }
         return *this;
     }

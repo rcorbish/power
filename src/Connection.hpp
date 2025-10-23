@@ -7,6 +7,7 @@
 #include <map>
 #include <mutex>
 #include <atomic>
+#include <vector>
 
 #include "Device.hpp"
 
@@ -38,9 +39,13 @@ class Connection {
     bool get( const std::string &deviceName ) ;
     void set( const std::string &deviceName, const bool on ) ;
     bool found( const std::string &deviceName ) ;
-    std::map<std::string, Device> list() const {
+    std::vector<std::string> list() const {
         std::lock_guard<std::mutex> lock(devicesMutex);
-        return devices;
+        std::vector<std::string> deviceNames;
+        for (const auto& pair : devices) {
+            deviceNames.push_back(pair.first);
+        }
+        return deviceNames;
     } 
 } ;
 

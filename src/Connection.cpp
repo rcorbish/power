@@ -56,14 +56,15 @@ void Connection::recvMsg() {
         LOG_WARN("recvfrom failed: {}", strerror(errno));
     } else if ( n == sizeof(MSG408) ) {
         MSG408 deviceInfo;
-        memcpy((void *)&deviceInfo, (void *)msg, sizeof(MSG408));
+        memcpy(&deviceInfo, msg, sizeof(MSG408));
         std::lock_guard<std::mutex> lock(devicesMutex);
+
         string deviceName(deviceInfo.id);
         if (devices.find(deviceName) == devices.end()) {
             if (g_logger) {
                 LOG_INFO("Discovered new device: {}", deviceName);
             }
-            devices.emplace(deviceName, deviceInfo);
+            devices.try_emplace(deviceName, deviceInfo);
         }
     } else if( n == 128) {
         // Ignore discovery responses
@@ -163,7 +164,7 @@ Connection::Connection() {
     // Bind the local socket to listen on any address
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = 9000;
+    address.sin_port = 0; //9000;
 
     if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
         if (g_logger) {

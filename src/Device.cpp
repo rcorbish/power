@@ -21,6 +21,24 @@
 
 using namespace std;
 
+
+Device::Device(const MSG408 &deviceInfo) : deviceInfo(deviceInfo), isReady(false), isOn(false) {
+    sequence = 0x55;
+    // Setup a remote address for the device
+    memset(&remoteAddress, 0, sizeof(remoteAddress));
+    int n = inet_pton(AF_INET, deviceInfo.host, &remoteAddress.sin_addr);
+    if( n <= 0 ) {
+        if (g_logger) {
+            LOG_ERROR("Device inet_pton failed for {}: {}", deviceInfo.host, (n == 0 ? "invalid address" : strerror(errno)));
+        } else {
+            perror("inet_pton failed");
+        }
+    } else {
+        remoteAddress.sin_port = htons(80);
+    }
+}
+
+
 void Device::sendMsg(const void *data, size_t length) {
     sequence++;
   
@@ -43,27 +61,9 @@ void Device::sendMsg(const void *data, size_t length) {
             LOG_DEBUG("Device sent {} bytes to {}", length, addr_str);
         }
     }
-
     close( localSocket );
-    isReady = false;
 }
 
-Device::Device(const MSG408 &deviceInfo) : deviceInfo(deviceInfo) {
-    sequence = 0x55;
-    // Setup a remote address for the device
-    memset(&remoteAddress, 0, sizeof(remoteAddress));
-    int n = inet_pton(AF_INET, deviceInfo.host, &remoteAddress.sin_addr);
-    if( n <= 0 ) {
-        if (g_logger) {
-            LOG_ERROR("Device inet_pton failed for {}: {}", deviceInfo.host, (n == 0 ? "invalid address" : strerror(errno)));
-        } else {
-            perror("inet_pton failed");
-        }
-    } else {
-        remoteAddress.sin_port = htons(80);
-    }
-    isReady = false;
-}
 
 int Device::connect() {
     if (g_logger) {
@@ -185,8 +185,6 @@ void Device::get() {
 }
 
 void Device::set(bool switchOn) {
-    isReady = false;
-
     uint8_t msg[130];
 
     uint8_t *p = msg;
