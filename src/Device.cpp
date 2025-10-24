@@ -67,11 +67,11 @@ void Device::sendMsg(const void *data, size_t length) {
 
 
 int Device::connect() const {
-    if (g_logger) {
-        char addr_str[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
-        LOG_INFO("Opening connection to device {} [{}]", deviceInfo.id, addr_str);
-    }
+    // if (g_logger) {
+    //     char addr_str[INET_ADDRSTRLEN];
+    //     inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
+    //     LOG_INFO("Opening connection to device {} [{}]", deviceInfo.id, addr_str);
+    // }
 
     // Prepare local socket from which we'll send and listen
     int localSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
@@ -84,52 +84,52 @@ int Device::connect() const {
         return -1;
     }
 
-    int reuse_true = 1;
-    if (setsockopt(localSocket,SOL_SOCKET,SO_REUSEADDR,&reuse_true, sizeof(reuse_true)) < 0) {
-        if (g_logger) {
-            LOG_ERROR("Device setsockopt failed: {}", strerror(errno));
-        } else {
-            perror("setsockopt");
-        }
-        close(localSocket);
-        return -1;
-    }
+    // int reuse_true = 1;
+    // if (setsockopt(localSocket,SOL_SOCKET,SO_REUSEADDR,&reuse_true, sizeof(reuse_true)) < 0) {
+    //     if (g_logger) {
+    //         LOG_ERROR("Device setsockopt failed: {}", strerror(errno));
+    //     } else {
+    //         perror("setsockopt");
+    //     }
+    //     close(localSocket);
+    //     return -1;
+    // }
 
-    if (g_logger) {
-        char addr_str[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
-        LOG_DEBUG("Device connection opened to {}", addr_str);
-    }
+    // if (g_logger) {
+    //     char addr_str[INET_ADDRSTRLEN];
+    //     inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
+    //     LOG_DEBUG("Device connection opened to {}", addr_str);
+    // }
 
-    struct sockaddr_in address;
-    memset(&address, 0, sizeof(address));
+    // struct sockaddr_in address;
+    // memset(&address, 0, sizeof(address));
 
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = 0;
+    // address.sin_family = AF_INET;
+    // address.sin_addr.s_addr = INADDR_ANY;
+    // address.sin_port = htons(9000);
 
-    if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        if (g_logger) {
-            LOG_ERROR("Device bind failed: {}", strerror(errno));
-        } else {
-            perror("bind failed");
-        }
-        close(localSocket);
-        return -1;
-    }
+    // if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
+    //     if (g_logger) {
+    //         LOG_ERROR("Device bind failed: {}", strerror(errno));
+    //     } else {
+    //         perror("bind failed");
+    //     }
+    //     close(localSocket);
+    //     return -1;
+    // }
 
-    if (g_logger) {
-        char local_addr[INET_ADDRSTRLEN];
-        char remote_addr[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &address.sin_addr, local_addr, sizeof(local_addr));
-        inet_ntop(AF_INET, &remoteAddress.sin_addr, remote_addr, sizeof(remote_addr));
-        LOG_DEBUG("Device bound local[{}] to remote [{}]", local_addr, remote_addr);
-    }
+    // if (g_logger) {
+    //     char local_addr[INET_ADDRSTRLEN];
+    //     char remote_addr[INET_ADDRSTRLEN];
+    //     inet_ntop(AF_INET, &address.sin_addr, local_addr, sizeof(local_addr));
+    //     inet_ntop(AF_INET, &remoteAddress.sin_addr, remote_addr, sizeof(remote_addr));
+    //     LOG_DEBUG("Device bound local[{}] to remote [{}]", local_addr, remote_addr);
+    // }
 
-    const auto flags = fcntl(localSocket,F_GETFL,0);
-    if( flags >= 0 ) {
-        fcntl(localSocket, F_SETFL, flags | O_NONBLOCK);
-    }
+    // const auto flags = fcntl(localSocket,F_GETFL,0);
+    // if( flags >= 0 ) {
+    //     fcntl(localSocket, F_SETFL, flags | O_NONBLOCK);
+    // }
 
     return localSocket;
 }
