@@ -182,7 +182,7 @@ Connection::Connection() {
     if (g_logger) {
         char addr_str[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &address.sin_addr, addr_str, sizeof(addr_str));
-        LOG_INFO("Listening for device broadcasts on {}", addr_str);
+        LOG_INFO("Listening for device broadcasts on {}:{}", addr_str, ntohs(address.sin_port));
     }
     int err = pthread_create(&threadId, nullptr, &receiverThread, this);
     if (err != 0) {
