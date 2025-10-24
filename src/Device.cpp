@@ -246,7 +246,6 @@ bool Device::state() const {
         struct timespec req = {0, 100000000L}; // 100ms
         nanosleep( &req, nullptr );
         if( --count == 0 ) {
-            LOG_ERROR("Device state timeout") ;
             throw std::runtime_error("Device state timeout") ;
         }
     }
