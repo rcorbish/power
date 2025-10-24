@@ -100,6 +100,7 @@ int main(int argc, char **argv) {
             }
         }
         // con.stopDiscovery() ;
+        LOG_INFO("Using device name: {}", args.device);
 
         bool on = con.get( args.device );
         if( on == turnDeviceOn ) {
