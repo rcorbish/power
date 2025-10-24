@@ -24,6 +24,7 @@ void *Connection::receiverThread(void *self) {
 // This runs in a thread - since we have no idea
 // how many response we get to a broadcast message
 void Connection::recvLoop() {
+    LOG_INFO("Starting receive thread")
     running = true;
     while ( running ) {
         recvMsg();   
@@ -55,6 +56,8 @@ void Connection::recvMsg() {
     if (n < 0) {
         LOG_WARN("recvfrom failed: {}", strerror(errno));
     } else if ( n == sizeof(MSG408) ) {
+        LOG_DEBUG("Received MSG408");
+
         MSG408 deviceInfo;
         memcpy(&deviceInfo, msg, sizeof(MSG408));
         std::lock_guard<std::mutex> lock(devicesMutex);
@@ -68,7 +71,9 @@ void Connection::recvMsg() {
         }
     } else if( n == 128) {
         // Ignore discovery responses
+        LOG_DEBUG("Received 128 byte discovery response - ignoring");
     } else if( n == 130 ) {
+        LOG_DEBUG("Received 130 byte discovery response - processing state update");
         uint8_t msg[130];
         if (g_logger) {
             stringstream ss;  
@@ -164,7 +169,7 @@ Connection::Connection() {
     // Bind the local socket to listen on any address
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = 0; //9000;
+    address.sin_port = 9000;
 
     if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
         if (g_logger) {
