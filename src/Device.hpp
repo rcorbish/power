@@ -49,7 +49,7 @@ class Device {
 
   protected:
     void sendMsg( const void *data, size_t length ) ;
-    int connect();
+    int connect() const ;
   public:
     Device( const MSG408 &deviceInfo ) ;
 

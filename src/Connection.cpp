@@ -219,7 +219,9 @@ void Connection::startDiscovery() {
 }
 
 bool Connection::get(const std::string &deviceName) {
-    return getDevice(deviceName).state();
+    auto &device = getDevice(deviceName);
+    device.get();
+    return device.state();
 }
 
 bool Connection::found(const std::string &deviceName) {

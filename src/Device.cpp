@@ -66,7 +66,7 @@ void Device::sendMsg(const void *data, size_t length) {
 }
 
 
-int Device::connect() {
+int Device::connect() const {
     if (g_logger) {
         char addr_str[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
