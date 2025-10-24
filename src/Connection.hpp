@@ -17,7 +17,7 @@ class Connection {
   friend std::ostream & operator<<( std::ostream &os, const Connection &con ) ;
 
   private:
-    int localSocket;
+    int broadcastSocket;
     uint32_t sequence ;
     pthread_t threadId ;
     std::map<std::string, Device> devices ;
@@ -28,7 +28,7 @@ class Connection {
     void recvLoop() ;
 
   protected:
-    void sendMsg( const void *data, size_t length ) ;
+    void broadcastMsg( const void *data, size_t length ) ;
     void recvMsg( int skt ) ;
     Device & getDevice( const std::string &deviceName ) ;
 

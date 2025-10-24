@@ -34,7 +34,8 @@ Device::Device(const MSG408 &deviceInfo) : deviceInfo(deviceInfo), isReady(false
             perror("inet_pton failed");
         }
     } else {
-        remoteAddress.sin_port = htons(80);
+        remoteAddress.sin_port = htons(80); // Standard ECO-plugs port
+        LOG_DEBUG( "Device {} address set to {}:80", deviceInfo.id, deviceInfo.host);
     }
 }
 
@@ -44,7 +45,7 @@ void Device::sendMsg(const void *data, size_t length) {
   
     const auto localSocket = connect();
 
-    size_t sz = sendto(localSocket, data, length,
+    auto sz = ::sendto(localSocket, data, length,
                     MSG_CONFIRM,
                     (const struct sockaddr *)&remoteAddress,
                     sizeof(remoteAddress));

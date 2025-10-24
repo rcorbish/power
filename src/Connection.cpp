@@ -25,52 +25,24 @@ void *Connection::receiverThread(void *self) {
 // how many response we get to a broadcast message
 void Connection::recvLoop() {
     LOG_INFO("Starting receive thread")
-    running = true;
-
-        // Prepare local socket from which we'll send and listen
-    auto listeningSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
-    if (listeningSocket < 0) {
-        if (g_logger) {
-            LOG_FATAL("Connection socket creation failed: {}", strerror(errno));
-        }
-        throw NetworkException(errno, "Socket creation failed");
-    }
-
-    struct sockaddr_in address;
-    memset(&address, 0, sizeof(address));
-    // Bind the local socket to listen on any address
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(9000);
-
-    if (::bind(listeningSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        if (g_logger) {
-            LOG_FATAL("Connection bind failed: {}", strerror(errno));
-        }
-        close(listeningSocket);
-        throw NetworkException(errno, "bind failed");
-    }
-
-    if (g_logger) {
-        char addr_str[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &address.sin_addr, addr_str, sizeof(addr_str));
-        LOG_INFO("Listening for device broadcasts on {}:{}", addr_str, ntohs(address.sin_port));
-    }
+    running.store(true);
 
     while ( running ) {
-        recvMsg( listeningSocket );   
+        recvMsg( broadcastSocket );   
     }
+
     if (g_logger) {
         LOG_WARN("Exited Connection receive loop");
     }
 }
 
 void Connection::stopDiscovery() {
-    running = false;
-    if (localSocket >= 0) {
-        shutdown(localSocket, SHUT_RDWR);
-        close(localSocket);
-        localSocket = -1;
+    running.store(false);
+
+    if (broadcastSocket >= 0) {
+        shutdown(broadcastSocket, SHUT_RDWR);
+        close(broadcastSocket);
+        broadcastSocket = -1;
     }
     pthread_join(threadId, nullptr);
     if (g_logger) {
@@ -139,16 +111,17 @@ void Connection::recvMsg( int skt ) {
     }
 }
 
-void Connection::sendMsg(const void *data, size_t length) {
-    sequence++;
-
+void Connection::broadcastMsg(const void *data, size_t length) {
     struct sockaddr_in remoteAddress;
+
     memset(&remoteAddress, 0, sizeof(remoteAddress));
     remoteAddress.sin_family = AF_INET;
     remoteAddress.sin_port = htons(25);
     remoteAddress.sin_addr.s_addr = INADDR_BROADCAST;
+    
+    sequence++;
 
-    ssize_t sz = sendto(localSocket, data, length,
+    ssize_t sz = sendto(broadcastSocket, data, length,
                        0,
                        (const struct sockaddr *)&remoteAddress,
                        sizeof(remoteAddress));
@@ -161,7 +134,7 @@ void Connection::sendMsg(const void *data, size_t length) {
     } else {
         if (g_logger) {
             char addr_str[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
+            inet_ntop(AF_INET, &(remoteAddress.sin_addr), addr_str, sizeof(addr_str));
             LOG_DEBUG("Connection sent {} bytes to {}", length, addr_str);
         }
     }
@@ -180,8 +153,8 @@ Connection::Connection() {
     sequence = 0x55;
 
     // Prepare local socket from which we'll send broadcasts
-    localSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
-    if (localSocket < 0) {
+    broadcastSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
+    if (broadcastSocket < 0) {
         if (g_logger) {
             LOG_FATAL("Connection socket creation failed: {}", strerror(errno));
         }
@@ -189,36 +162,36 @@ Connection::Connection() {
     }
 
     int opt = 1;
-    if (::setsockopt(localSocket, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(opt))) {
+    if (::setsockopt(broadcastSocket, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(opt))) {
         if (g_logger) {
             LOG_ERROR("Connection setsockopt failed: {}", strerror(errno));
         }
-        close(localSocket);
+        close(broadcastSocket);
         throw NetworkException(errno, "setsockopt failed");
     }
 
-    // struct sockaddr_in address;
-    // memset(&address, 0, sizeof(address));
-    // // Bind the local socket to listen on any address
-    // address.sin_family = AF_INET;
-    // address.sin_addr.s_addr = INADDR_ANY;
-    // address.sin_port = htons(9000);
+    struct sockaddr_in address;
+    memset(&address, 0, sizeof(address));
+    // Bind the local socket to listen on any address
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(9000);
 
-    // if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
-    //     if (g_logger) {
-    //         LOG_FATAL("Connection bind failed: {}", strerror(errno));
-    //     }
-    //     close(localSocket);
-    //     throw NetworkException(errno, "bind failed");
-    // }
-    // if (g_logger) {
-    //     char addr_str[INET_ADDRSTRLEN];
-    //     inet_ntop(AF_INET, &address.sin_addr, addr_str, sizeof(addr_str));
-    //     LOG_INFO("Listening for device broadcasts on {}:{}", addr_str, ntohs(address.sin_port));
-    // }
+    if (::bind(broadcastSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
+        if (g_logger) {
+            LOG_FATAL("Connection bind failed: {}", strerror(errno));
+        }
+        close(broadcastSocket);
+        throw NetworkException(errno, "bind failed");
+    }
+    if (g_logger) {
+        char addr_str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &address.sin_addr, addr_str, sizeof(addr_str));
+        LOG_INFO("Listening for device broadcasts on {}:{}", addr_str, ntohs(address.sin_port));
+    }
     int err = pthread_create(&threadId, nullptr, &receiverThread, this);
     if (err != 0) {
-        close(localSocket);
+        close(broadcastSocket);
         if (g_logger) {
             LOG_FATAL("Failed to create receiver thread: {}", strerror(err));
         }
@@ -242,7 +215,7 @@ void Connection::startDiscovery() {
     *p++ = 0x9d;
     *p++ = 0x00;
 
-    sendMsg(discover, sizeof(discover));
+    broadcastMsg(discover, sizeof(discover));
 }
 
 bool Connection::get(const std::string &deviceName) {
