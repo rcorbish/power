@@ -56,7 +56,9 @@ void Connection::recvMsg() {
     if (n < 0) {
         LOG_WARN("recvfrom failed: {}", strerror(errno));
     } else if ( n == sizeof(MSG408) ) {
-        LOG_DEBUG("Received MSG408");
+        char addr_str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &remote_addr.sin_addr, addr_str, sizeof(addr_str));
+        LOG_INFO("Received MSG408 from {}:{}", addr_str, ntohs(remote_addr.sin_port));
 
         MSG408 deviceInfo;
         memcpy(&deviceInfo, msg, sizeof(MSG408));
