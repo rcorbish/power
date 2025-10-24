@@ -118,13 +118,13 @@ int Device::connect() const {
         return -1;
     }
 
-    // if (g_logger) {
-    //     char local_addr[INET_ADDRSTRLEN];
-    //     char remote_addr[INET_ADDRSTRLEN];
-    //     inet_ntop(AF_INET, &address.sin_addr, local_addr, sizeof(local_addr));
-    //     inet_ntop(AF_INET, &remoteAddress.sin_addr, remote_addr, sizeof(remote_addr));
-    //     LOG_DEBUG("Device bound local[{}] to remote [{}]", local_addr, remote_addr);
-    // }
+    if (g_logger) {
+        char local_addr[INET_ADDRSTRLEN];
+        char remote_addr[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &address.sin_addr, local_addr, sizeof(local_addr));
+        inet_ntop(AF_INET, &remoteAddress.sin_addr, remote_addr, sizeof(remote_addr));
+        LOG_DEBUG("Device bound local[{}:{}] to remote [{}:{}]", local_addr, ntohs(address.sin_port), remote_addr, ntohs(remoteAddress.sin_port));
+    }
 
     // const auto flags = fcntl(localSocket,F_GETFL,0);
     // if( flags >= 0 ) {
