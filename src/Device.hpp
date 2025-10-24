@@ -61,13 +61,7 @@ class Device {
         isReady.store(true);
     }    
     
-    bool state() const {
-        while( isReady.load() == false ) {
-            struct timespec req = {0, 10000000L}; // 10ms
-            nanosleep( &req, nullptr );
-        }
-        return isOn.load();
-    }
+    bool state() const ;
 
     Device &operator =( const Device &other ) { 
         if (this != &other) {

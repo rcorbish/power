@@ -240,6 +240,19 @@ void Device::set(bool switchOn) {
     sendMsg(msg, sizeof(msg));
 }
 
+bool Device::state() const {
+    int count = 50 ; // wait up to 5 seconds
+    while( isReady.load() == false ) {
+        struct timespec req = {0, 100000000L}; // 100ms
+        nanosleep( &req, nullptr );
+        if( --count == 0 ) {
+            LOG_ERROR("Device state timeout") ;
+            throw std::runtime_error("Device state timeout") ;
+        }
+    }
+    return isOn.load();
+}
+
 std::ostream &operator<<(std::ostream &os, const Device &dev) {
     os << dev.deviceInfo.name << '\n'
        << dev.deviceInfo.id << '\n'
