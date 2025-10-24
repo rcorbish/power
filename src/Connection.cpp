@@ -169,7 +169,7 @@ Connection::Connection() {
     // Bind the local socket to listen on any address
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = 9000;
+    address.sin_port = htons(9000);
 
     if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
         if (g_logger) {
