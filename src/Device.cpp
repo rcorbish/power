@@ -59,7 +59,7 @@ void Device::sendMsg(const void *data, size_t length) {
         if (g_logger) {
             char addr_str[INET_ADDRSTRLEN];
             inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
-            LOG_DEBUG("Device sent {} bytes to {}", length, addr_str);
+            LOG_DEBUG("Device sent {} bytes to {}:{}", length, addr_str, ntohs(remoteAddress.sin_port));
         }
     }
     close( localSocket );
