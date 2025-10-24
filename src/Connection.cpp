@@ -72,7 +72,7 @@ void Connection::recvMsg( int skt ) {
             if (g_logger) {
                 LOG_INFO("Discovered new device: {}", deviceName);
             }
-            devices.try_emplace(deviceName, deviceInfo);
+            devices.try_emplace(deviceName, deviceInfo, localPort);
         }
     } else if( n == 128) {
         // Ignore discovery responses
@@ -175,7 +175,7 @@ Connection::Connection() {
     // Bind the local socket to listen on any address
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(9000);
+    address.sin_port = 0; // Let OS pick the port
 
     if (::bind(broadcastSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
         if (g_logger) {
@@ -187,7 +187,8 @@ Connection::Connection() {
     if (g_logger) {
         char addr_str[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &address.sin_addr, addr_str, sizeof(addr_str));
-        LOG_INFO("Listening for device broadcasts on {}:{}", addr_str, ntohs(address.sin_port));
+        localPort = ntohs(address.sin_port);
+        LOG_INFO("Listening for device broadcasts on {}:{}", addr_str, localPort);
     }
     int err = pthread_create(&threadId, nullptr, &receiverThread, this);
     if (err != 0) {

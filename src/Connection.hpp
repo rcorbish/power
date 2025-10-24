@@ -18,6 +18,7 @@ class Connection {
 
   private:
     int broadcastSocket;
+    uint16_t localPort;    // we're using this port for send & receive
     uint32_t sequence ;
     pthread_t threadId ;
     std::map<std::string, Device> devices ;

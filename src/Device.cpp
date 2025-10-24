@@ -22,7 +22,7 @@
 using namespace std;
 
 
-Device::Device(const MSG408 &deviceInfo) : deviceInfo(deviceInfo), isReady(false), isOn(false) {
+Device::Device(const MSG408 &deviceInfo, const int _localPort) : localPort(_localPort), deviceInfo(deviceInfo), isReady(false), isOn(false) {
     sequence = 0x55;
     // Setup a remote address for the device
     memset(&remoteAddress, 0, sizeof(remoteAddress));
@@ -101,22 +101,22 @@ int Device::connect() const {
     //     LOG_DEBUG("Device connection opened to {}", addr_str);
     // }
 
-    // struct sockaddr_in address;
-    // memset(&address, 0, sizeof(address));
+    struct sockaddr_in address;
+    memset(&address, 0, sizeof(address));
 
-    // address.sin_family = AF_INET;
-    // address.sin_addr.s_addr = INADDR_ANY;
-    // address.sin_port = htons(9000);
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = localPort;
 
-    // if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
-    //     if (g_logger) {
-    //         LOG_ERROR("Device bind failed: {}", strerror(errno));
-    //     } else {
-    //         perror("bind failed");
-    //     }
-    //     close(localSocket);
-    //     return -1;
-    // }
+    if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
+        if (g_logger) {
+            LOG_ERROR("Device bind failed: {}", strerror(errno));
+        } else {
+            perror("bind failed");
+        }
+        close(localSocket);
+        return -1;
+    }
 
     // if (g_logger) {
     //     char local_addr[INET_ADDRSTRLEN];

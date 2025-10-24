@@ -46,12 +46,13 @@ class Device {
     uint32_t sequence ;
     std::atomic<bool> isReady ;
     std::atomic<bool> isOn ;
+    int localPort;
 
   protected:
     void sendMsg( const void *data, size_t length ) ;
     int connect() const ;
   public:
-    Device( const MSG408 &deviceInfo ) ;
+    Device( const MSG408 &deviceInfo, const int _localPort ) ;
 
     void get() ;
     void set( bool switchOn ) ;
