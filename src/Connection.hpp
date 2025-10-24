@@ -29,7 +29,7 @@ class Connection {
 
   protected:
     void sendMsg( const void *data, size_t length ) ;
-    void recvMsg() ;
+    void recvMsg( int skt ) ;
     Device & getDevice( const std::string &deviceName ) ;
 
   public:

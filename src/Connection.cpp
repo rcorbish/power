@@ -26,8 +26,39 @@ void *Connection::receiverThread(void *self) {
 void Connection::recvLoop() {
     LOG_INFO("Starting receive thread")
     running = true;
+
+        // Prepare local socket from which we'll send and listen
+    auto listeningSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
+    if (listeningSocket < 0) {
+        if (g_logger) {
+            LOG_FATAL("Connection socket creation failed: {}", strerror(errno));
+        }
+        throw NetworkException(errno, "Socket creation failed");
+    }
+
+    struct sockaddr_in address;
+    memset(&address, 0, sizeof(address));
+    // Bind the local socket to listen on any address
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(9000);
+
+    if (::bind(listeningSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
+        if (g_logger) {
+            LOG_FATAL("Connection bind failed: {}", strerror(errno));
+        }
+        close(listeningSocket);
+        throw NetworkException(errno, "bind failed");
+    }
+
+    if (g_logger) {
+        char addr_str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &address.sin_addr, addr_str, sizeof(addr_str));
+        LOG_INFO("Listening for device broadcasts on {}:{}", addr_str, ntohs(address.sin_port));
+    }
+
     while ( running ) {
-        recvMsg();   
+        recvMsg( listeningSocket );   
     }
     if (g_logger) {
         LOG_WARN("Exited Connection receive loop");
@@ -47,12 +78,12 @@ void Connection::stopDiscovery() {
     }
 }
 
-void Connection::recvMsg() {
+void Connection::recvMsg( int skt ) {
     uint8_t msg[1024];
     struct sockaddr_in remote_addr; 
     socklen_t remote_addr_len = sizeof(remote_addr);
 
-    int n = recvfrom(localSocket, &msg, sizeof(msg), MSG_WAITALL, (struct sockaddr *)&remote_addr, &remote_addr_len);
+    int n = recvfrom(skt, &msg, sizeof(msg), MSG_WAITALL, (struct sockaddr *)&remote_addr, &remote_addr_len);
     if (n < 0) {
         LOG_WARN("recvfrom failed: {}", strerror(errno));
     } else if ( n == sizeof(MSG408) ) {
@@ -148,7 +179,7 @@ Device &Connection::getDevice(const std::string &deviceName) {
 Connection::Connection() {
     sequence = 0x55;
 
-    // Prepare local socket from which we'll send and listen
+    // Prepare local socket from which we'll send broadcasts
     localSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
     if (localSocket < 0) {
         if (g_logger) {
@@ -166,26 +197,25 @@ Connection::Connection() {
         throw NetworkException(errno, "setsockopt failed");
     }
 
-    struct sockaddr_in address;
-    memset(&address, 0, sizeof(address));
-    // Bind the local socket to listen on any address
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(9000);
+    // struct sockaddr_in address;
+    // memset(&address, 0, sizeof(address));
+    // // Bind the local socket to listen on any address
+    // address.sin_family = AF_INET;
+    // address.sin_addr.s_addr = INADDR_ANY;
+    // address.sin_port = htons(9000);
 
-    if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        if (g_logger) {
-            LOG_FATAL("Connection bind failed: {}", strerror(errno));
-        }
-        close(localSocket);
-        throw NetworkException(errno, "bind failed");
-    }
-
-    if (g_logger) {
-        char addr_str[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &address.sin_addr, addr_str, sizeof(addr_str));
-        LOG_INFO("Listening for device broadcasts on {}:{}", addr_str, ntohs(address.sin_port));
-    }
+    // if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
+    //     if (g_logger) {
+    //         LOG_FATAL("Connection bind failed: {}", strerror(errno));
+    //     }
+    //     close(localSocket);
+    //     throw NetworkException(errno, "bind failed");
+    // }
+    // if (g_logger) {
+    //     char addr_str[INET_ADDRSTRLEN];
+    //     inet_ntop(AF_INET, &address.sin_addr, addr_str, sizeof(addr_str));
+    //     LOG_INFO("Listening for device broadcasts on {}:{}", addr_str, ntohs(address.sin_port));
+    // }
     int err = pthread_create(&threadId, nullptr, &receiverThread, this);
     if (err != 0) {
         close(localSocket);
