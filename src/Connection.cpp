@@ -91,7 +91,6 @@ void Connection::recvMsg( int skt ) {
         LOG_DEBUG("Received 128 byte discovery response - ignoring");
     } else if( n == 130 ) {
         LOG_DEBUG("Received 130 byte discovery response - processing state update");
-        uint8_t msg[130];
         if (g_logger) {
             stringstream ss;  
             for( int i = 0 ; i < n ; i++ ) {
@@ -113,7 +112,6 @@ void Connection::recvMsg( int skt ) {
                 LOG_ERROR("Unknown device [{}] sent state update", deviceId);
             }
         }
-        
     } else {
         if (g_logger) {
             LOG_WARN("Received unexpected message of {} bytes", n);
