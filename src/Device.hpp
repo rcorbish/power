@@ -4,7 +4,7 @@
 
 #include <netinet/in.h>
 #include <pthread.h>
-
+#include <functional> 
 
 typedef struct {
     uint32_t skip;      // 0-3
@@ -34,6 +34,9 @@ typedef struct {
 } MSG408;
 
 
+typedef std::function<void(const struct sockaddr_in &targetAddress, 
+                           const void *data, 
+                           size_t length)> sender_function;
 
 class Device {
 
@@ -46,13 +49,13 @@ class Device {
     uint32_t sequence ;
     std::atomic<bool> isReady ;
     std::atomic<bool> isOn ;
-    int localPort;
 
+    sender_function sender;
   protected:
-    void sendMsg( const void *data, size_t length ) ;
-    int connect() const ;
+    // void sendMsg( const void *data, size_t length ) ;
+    // int connect() const ;
   public:
-    Device( const MSG408 &deviceInfo, const int _localPort ) ;
+    Device( const MSG408 &deviceInfo, sender_function sender ) ;
 
     void get() ;
     void set( bool switchOn ) ;

@@ -22,7 +22,7 @@
 using namespace std;
 
 
-Device::Device(const MSG408 &deviceInfo, const int _localPort) : localPort(_localPort), deviceInfo(deviceInfo), isReady(false), isOn(false) {
+Device::Device(const MSG408 &deviceInfo, sender_function _sender) : sender(_sender), deviceInfo(deviceInfo), isReady(false), isOn(false) {
     sequence = 0x55;
     // Setup a remote address for the device
     memset(&remoteAddress, 0, sizeof(remoteAddress));
@@ -40,99 +40,99 @@ Device::Device(const MSG408 &deviceInfo, const int _localPort) : localPort(_loca
 }
 
 
-void Device::sendMsg(const void *data, size_t length) {
-    sequence++;
+// void Device::sendMsg(const void *data, size_t length) {
+//     sequence++;
   
-    const auto localSocket = connect();
+//     const auto localSocket = connect();
 
-    auto sz = ::sendto(localSocket, data, length,
-                    MSG_CONFIRM,
-                    (const struct sockaddr *)&remoteAddress,
-                    sizeof(remoteAddress));
-    if (sz != length) {
-        if (g_logger) {
-            LOG_ERROR("Device sendto failed: {}", strerror(errno));
-        } else {
-            perror("sendto");
-        }
-    } else {
-        if (g_logger) {
-            char addr_str[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
-            LOG_DEBUG("Device sent {} bytes to {}:{}", length, addr_str, ntohs(remoteAddress.sin_port));
-        }
-    }
-    close( localSocket );
-}
+//     auto sz = ::sendto(localSocket, data, length,
+//                     MSG_CONFIRM,
+//                     (const struct sockaddr *)&remoteAddress,
+//                     sizeof(remoteAddress));
+//     if (sz != length) {
+//         if (g_logger) {
+//             LOG_ERROR("Device sendto failed: {}", strerror(errno));
+//         } else {
+//             perror("sendto");
+//         }
+//     } else {
+//         if (g_logger) {
+//             char addr_str[INET_ADDRSTRLEN];
+//             inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
+//             LOG_DEBUG("Device sent {} bytes to {}:{}", length, addr_str, ntohs(remoteAddress.sin_port));
+//         }
+//     }
+//     close( localSocket );
+// }
 
 
-int Device::connect() const {
-    // if (g_logger) {
-    //     char addr_str[INET_ADDRSTRLEN];
-    //     inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
-    //     LOG_INFO("Opening connection to device {} [{}]", deviceInfo.id, addr_str);
-    // }
+// int Device::connect() const {
+//     // if (g_logger) {
+//     //     char addr_str[INET_ADDRSTRLEN];
+//     //     inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
+//     //     LOG_INFO("Opening connection to device {} [{}]", deviceInfo.id, addr_str);
+//     // }
 
-    // Prepare local socket from which we'll send and listen
-    int localSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
-    if (localSocket < 0) {
-        if (g_logger) {
-            LOG_ERROR("Device socket creation failed: {}", strerror(errno));
-        } else {
-            perror("socket failed");
-        }
-        return -1;
-    }
+//     // Prepare local socket from which we'll send and listen
+//     int localSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
+//     if (localSocket < 0) {
+//         if (g_logger) {
+//             LOG_ERROR("Device socket creation failed: {}", strerror(errno));
+//         } else {
+//             perror("socket failed");
+//         }
+//         return -1;
+//     }
 
-    // int reuse_true = 1;
-    // if (setsockopt(localSocket,SOL_SOCKET,SO_REUSEADDR,&reuse_true, sizeof(reuse_true)) < 0) {
-    //     if (g_logger) {
-    //         LOG_ERROR("Device setsockopt failed: {}", strerror(errno));
-    //     } else {
-    //         perror("setsockopt");
-    //     }
-    //     close(localSocket);
-    //     return -1;
-    // }
+//     // int reuse_true = 1;
+//     // if (setsockopt(localSocket,SOL_SOCKET,SO_REUSEADDR,&reuse_true, sizeof(reuse_true)) < 0) {
+//     //     if (g_logger) {
+//     //         LOG_ERROR("Device setsockopt failed: {}", strerror(errno));
+//     //     } else {
+//     //         perror("setsockopt");
+//     //     }
+//     //     close(localSocket);
+//     //     return -1;
+//     // }
 
-    // if (g_logger) {
-    //     char addr_str[INET_ADDRSTRLEN];
-    //     inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
-    //     LOG_DEBUG("Device connection opened to {}", addr_str);
-    // }
+//     // if (g_logger) {
+//     //     char addr_str[INET_ADDRSTRLEN];
+//     //     inet_ntop(AF_INET, &remoteAddress.sin_addr, addr_str, sizeof(addr_str));
+//     //     LOG_DEBUG("Device connection opened to {}", addr_str);
+//     // }
 
-    struct sockaddr_in address;
-    memset(&address, 0, sizeof(address));
+//     struct sockaddr_in address;
+//     memset(&address, 0, sizeof(address));
 
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(localPort);
+//     address.sin_family = AF_INET;
+//     address.sin_addr.s_addr = INADDR_ANY;
+//     address.sin_port = htons(localPort);
 
-    if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        if (g_logger) {
-            LOG_ERROR("Device bind failed: {}", strerror(errno));
-        } else {
-            perror("bind failed");
-        }
-        close(localSocket);
-        return -1;
-    }
+//     if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
+//         if (g_logger) {
+//             LOG_ERROR("Device bind failed: {}", strerror(errno));
+//         } else {
+//             perror("bind failed");
+//         }
+//         close(localSocket);
+//         return -1;
+//     }
 
-    if (g_logger) {
-        char local_addr[INET_ADDRSTRLEN];
-        char remote_addr[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &address.sin_addr, local_addr, sizeof(local_addr));
-        inet_ntop(AF_INET, &remoteAddress.sin_addr, remote_addr, sizeof(remote_addr));
-        LOG_DEBUG("Device bound local[{}:{}] to remote [{}:{}]", local_addr, ntohs(address.sin_port), remote_addr, ntohs(remoteAddress.sin_port));
-    }
+//     if (g_logger) {
+//         char local_addr[INET_ADDRSTRLEN];
+//         char remote_addr[INET_ADDRSTRLEN];
+//         inet_ntop(AF_INET, &address.sin_addr, local_addr, sizeof(local_addr));
+//         inet_ntop(AF_INET, &remoteAddress.sin_addr, remote_addr, sizeof(remote_addr));
+//         LOG_DEBUG("Device bound local[{}:{}] to remote [{}:{}]", local_addr, ntohs(address.sin_port), remote_addr, ntohs(remoteAddress.sin_port));
+//     }
 
-    // const auto flags = fcntl(localSocket,F_GETFL,0);
-    // if( flags >= 0 ) {
-    //     fcntl(localSocket, F_SETFL, flags | O_NONBLOCK);
-    // }
+//     // const auto flags = fcntl(localSocket,F_GETFL,0);
+//     // if( flags >= 0 ) {
+//     //     fcntl(localSocket, F_SETFL, flags | O_NONBLOCK);
+//     // }
 
-    return localSocket;
-}
+//     return localSocket;
+// }
 
 void Device::get() {
     isReady = false;
@@ -182,7 +182,7 @@ void Device::get() {
     *p++ = 0xbe;
     *p++ = 0xef;
 
-    sendMsg(msg, sizeof(msg));
+    sender(remoteAddress, msg, sizeof(msg));
 }
 
 void Device::set(bool switchOn) {
@@ -237,7 +237,7 @@ void Device::set(bool switchOn) {
     *p++ = 0x01;
     *p++ = (switchOn ? 0x01 : 0x00);
 
-    sendMsg(msg, sizeof(msg));
+    sender(remoteAddress, msg, sizeof(msg));
 }
 
 bool Device::state() const {

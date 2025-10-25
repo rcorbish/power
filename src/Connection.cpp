@@ -24,8 +24,6 @@ void *Connection::receiverThread(void *self) {
 // This runs in a thread - since we have no idea
 // how many response we get to a broadcast message
 void Connection::recvLoop() {
-    LOG_INFO("Listening for device broadcasts on port {}", localPort);
-
     running.store(true);
 
     while ( running ) {
@@ -73,7 +71,13 @@ void Connection::recvMsg( int skt ) {
             if (g_logger) {
                 LOG_INFO("Discovered new device: {}", deviceName);
             }
-            devices.try_emplace(deviceName, deviceInfo, localPort);
+            devices.try_emplace(deviceName, 
+                                deviceInfo, 
+                                [this](const struct sockaddr_in &targetAddress, 
+                                       const void *data, 
+                                       size_t length) {
+                                    sendMsg(&targetAddress, data, length);
+                                });
         }
     } else if( n == 128) {
         // Ignore discovery responses
@@ -119,24 +123,47 @@ void Connection::broadcastMsg(const void *data, size_t length) {
     broadcastAddress.sin_family = AF_INET;
     broadcastAddress.sin_port = htons(25);
     broadcastAddress.sin_addr.s_addr = INADDR_BROADCAST;
-    
-    sequence++;
 
-    ssize_t sz = sendto(broadcastSocket, data, length,
-                       0,
-                       (const struct sockaddr *)&broadcastAddress,
-                       sizeof(broadcastAddress));
+    sendMsg(&broadcastAddress, data, length);
+    // sequence++;
+
+    // ssize_t sz = sendto(broadcastSocket, data, length,
+    //                    0,
+    //                    (const struct sockaddr *)&broadcastAddress,
+    //                    sizeof(broadcastAddress));
+    // if (sz != length) {
+    //     if (g_logger) {
+    //         LOG_ERROR("Connection sendto sent {} of {}: {}", sz, length, strerror(errno));
+    //     } else {
+    //         perror("sendto");
+    //     }
+    // } else {
+    //     if (g_logger) {
+    //         char addr_str[INET_ADDRSTRLEN];
+    //         inet_ntop(AF_INET, &broadcastAddress.sin_addr, addr_str, sizeof(addr_str));
+    //         LOG_DEBUG("Connection sent {} bytes to {}:{}", length, addr_str, ntohs(broadcastAddress.sin_port));
+    //     }
+    // }
+}
+
+void Connection::sendMsg( const struct sockaddr_in *targetAddress, const void *data, size_t length ) {
+    sequence++;
+  
+    ssize_t sz = ::sendto(broadcastSocket, data, length,
+                    MSG_CONFIRM,
+                    (const struct sockaddr *)targetAddress,
+                    sizeof(*targetAddress));
     if (sz != length) {
         if (g_logger) {
-            LOG_ERROR("Connection sendto sent {} of {}: {}", sz, length, strerror(errno));
+            LOG_ERROR("Connection sendto failed: {}", strerror(errno));
         } else {
             perror("sendto");
         }
     } else {
         if (g_logger) {
             char addr_str[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &broadcastAddress.sin_addr, addr_str, sizeof(addr_str));
-            LOG_DEBUG("Connection sent {} bytes to {}:{}", length, addr_str, ntohs(broadcastAddress.sin_port));
+            inet_ntop(AF_INET, &targetAddress->sin_addr, addr_str, sizeof(addr_str));
+            LOG_DEBUG("Connection sent {} bytes to {}:{}", length, addr_str, ntohs(targetAddress->sin_port));
         }
     }
 }
@@ -191,7 +218,7 @@ Connection::Connection() {
 
     char addr_str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &localAddress.sin_addr, addr_str, sizeof(addr_str));
-    localPort = ntohs(localAddress.sin_port);
+    LOG_INFO("Listening for device broadcasts on port {}", ntohs(localAddress.sin_port));
 
     int err = pthread_create(&threadId, nullptr, &receiverThread, this);
     if (err != 0) {
