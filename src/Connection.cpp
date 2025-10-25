@@ -62,6 +62,13 @@ void Connection::recvMsg( int skt ) {
         inet_ntop(AF_INET, &remote_addr.sin_addr, addr_str, sizeof(addr_str));
         LOG_INFO("Received MSG408 from {}:{}", addr_str, ntohs(remote_addr.sin_port));
 
+        if (g_logger) {
+            stringstream ss;  
+            for( int i = 0 ; i < n ; i++ ) {
+                ss << hex << setw(2) << setfill('0') << (int)msg[i] << " " ;
+            }
+            LOG_DEBUG("Device received {} bytes: {}", n, ss.str() );
+        }
         MSG408 deviceInfo;
         memcpy(&deviceInfo, msg, sizeof(MSG408));
         std::lock_guard<std::mutex> lock(devicesMutex);
@@ -92,20 +99,18 @@ void Connection::recvMsg( int skt ) {
             }
             LOG_DEBUG("Device received {} bytes: {}", n, ss.str() );
         }        
-        if( n == 130 ) {
-            const auto isOn = (msg[128] == 1) && (msg[129] != 0);
-            const auto deviceId = string((char *)&msg[4], 32);
-            std::lock_guard<std::mutex> lock(devicesMutex);
-            auto it = devices.find(deviceId);
-            if (it != devices.end()) {
-                it->second.updateState(isOn);
-                if (g_logger) {
-                    LOG_INFO("Updated device [{}] state to {}", deviceId, isOn ? "ON" : "OFF");
-                }   
-            } else {
-                if (g_logger) {
-                    LOG_ERROR("Unknown device [{}] sent state update", deviceId);
-                }
+        const auto isOn = (msg[128] == 1) && (msg[129] != 0);
+        const auto deviceId = string((char *)&msg[16], 32);
+        std::lock_guard<std::mutex> lock(devicesMutex);
+        auto it = devices.find(deviceId);
+        if (it != devices.end()) {
+            it->second.updateState(isOn);
+            if (g_logger) {
+                LOG_INFO("Updated device [{}] state to {}", deviceId, isOn ? "ON" : "OFF");
+            }   
+        } else {
+            if (g_logger) {
+                LOG_ERROR("Unknown device [{}] sent state update", deviceId);
             }
         }
         
