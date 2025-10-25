@@ -149,7 +149,7 @@ void Device::get() {
     msg[6] = (sequence & 0xff00) >> 8;
     msg[7] = sequence & 0x00ff;
 
-    memcpy(&msg[16], deviceInfo.name, sizeof(deviceInfo.name));
+    memcpy(&msg[16], deviceInfo.id, sizeof(deviceInfo.id));
 
     long now = (1000L * time(nullptr)) & 0xffffffff;
     msg[116] = now & 0xff;
