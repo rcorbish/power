@@ -24,7 +24,8 @@ void *Connection::receiverThread(void *self) {
 // This runs in a thread - since we have no idea
 // how many response we get to a broadcast message
 void Connection::recvLoop() {
-    LOG_INFO("Starting receive thread")
+    LOG_INFO("Listening for device broadcasts on port {}", localPort);
+
     running.store(true);
 
     while ( running ) {
@@ -112,19 +113,19 @@ void Connection::recvMsg( int skt ) {
 }
 
 void Connection::broadcastMsg(const void *data, size_t length) {
-    struct sockaddr_in remoteAddress;
+    struct sockaddr_in broadcastAddress;
 
-    memset(&remoteAddress, 0, sizeof(remoteAddress));
-    remoteAddress.sin_family = AF_INET;
-    remoteAddress.sin_port = htons(25);
-    remoteAddress.sin_addr.s_addr = INADDR_BROADCAST;
+    memset(&broadcastAddress, 0, sizeof(broadcastAddress));
+    broadcastAddress.sin_family = AF_INET;
+    broadcastAddress.sin_port = htons(25);
+    broadcastAddress.sin_addr.s_addr = INADDR_BROADCAST;
     
     sequence++;
 
     ssize_t sz = sendto(broadcastSocket, data, length,
                        0,
-                       (const struct sockaddr *)&remoteAddress,
-                       sizeof(remoteAddress));
+                       (const struct sockaddr *)&broadcastAddress,
+                       sizeof(broadcastAddress));
     if (sz != length) {
         if (g_logger) {
             LOG_ERROR("Connection sendto sent {} of {}: {}", sz, length, strerror(errno));
@@ -134,8 +135,8 @@ void Connection::broadcastMsg(const void *data, size_t length) {
     } else {
         if (g_logger) {
             char addr_str[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &(remoteAddress.sin_addr), addr_str, sizeof(addr_str));
-            LOG_DEBUG("Connection sent {} bytes to {}", length, addr_str);
+            inet_ntop(AF_INET, &broadcastAddress.sin_addr, addr_str, sizeof(addr_str));
+            LOG_DEBUG("Connection sent {} bytes to {}:{}", length, addr_str, ntohs(broadcastAddress.sin_port));
         }
     }
 }
@@ -170,14 +171,14 @@ Connection::Connection() {
         throw NetworkException(errno, "setsockopt failed");
     }
 
-    struct sockaddr_in address;
-    memset(&address, 0, sizeof(address));
+    struct sockaddr_in localAddress;
+    memset(&localAddress, 0, sizeof(localAddress));
     // Bind the local socket to listen on any address
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = 0; // Let OS pick the port
+    localAddress.sin_family = AF_INET;
+    localAddress.sin_addr.s_addr = INADDR_ANY;
+    localAddress.sin_port = 0; // Let OS pick the port
 
-    if (::bind(broadcastSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
+    if (::bind(broadcastSocket, (struct sockaddr *)&localAddress, sizeof(localAddress)) < 0) {
         if (g_logger) {
             LOG_FATAL("Connection bind failed: {}", strerror(errno));
         }
@@ -186,9 +187,8 @@ Connection::Connection() {
     }
     if (g_logger) {
         char addr_str[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &address.sin_addr, addr_str, sizeof(addr_str));
-        localPort = ntohs(address.sin_port);
-        LOG_INFO("Listening for device broadcasts on {}:{}", addr_str, localPort);
+        inet_ntop(AF_INET, &localAddress.sin_addr, addr_str, sizeof(addr_str));
+        localPort = ntohs(localAddress.sin_port);
     }
     int err = pthread_create(&threadId, nullptr, &receiverThread, this);
     if (err != 0) {
