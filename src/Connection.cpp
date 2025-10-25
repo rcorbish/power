@@ -100,8 +100,11 @@ void Connection::recvMsg( int skt ) {
         }        
         const auto isOn = (msg[128] == 1);
         const auto deviceId = string((char *)&msg[16], 32);
-        LOG_DEBUG( "Scanning for device [{}], in {} devices", deviceId, devices.size() );
-        
+        LOG_DEBUG( "Scanning for device [{}], from", deviceId);
+        for( auto &pair : devices ) {
+            LOG_DEBUG(" [{}]", pair.first);
+        }
+
         std::lock_guard<std::mutex> lock(devicesMutex);
         auto it = devices.find(deviceId);
         if (it != devices.end()) {
