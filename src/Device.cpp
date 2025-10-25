@@ -182,7 +182,7 @@ void Device::get() {
     *p++ = 0xbe;
     *p++ = 0xef;
 
-    sender(remoteAddress, msg, sizeof(msg));
+    sender(&remoteAddress, msg, sizeof(msg));
 }
 
 void Device::set(bool switchOn) {
@@ -237,7 +237,7 @@ void Device::set(bool switchOn) {
     *p++ = 0x01;
     *p++ = (switchOn ? 0x01 : 0x00);
 
-    sender(remoteAddress, msg, sizeof(msg));
+    sender(&remoteAddress, msg, sizeof(msg));
 }
 
 bool Device::state() const {

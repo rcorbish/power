@@ -73,10 +73,10 @@ void Connection::recvMsg( int skt ) {
             }
             devices.try_emplace(deviceName, 
                                 deviceInfo, 
-                                [this](const struct sockaddr_in &targetAddress, 
+                                [this](const struct sockaddr_in *targetAddress, 
                                        const void *data, 
                                        size_t length) {
-                                    sendMsg(&targetAddress, data, length);
+                                    sendMsg(targetAddress, data, length);
                                 });
         }
     } else if( n == 128) {
@@ -148,7 +148,7 @@ void Connection::broadcastMsg(const void *data, size_t length) {
 
 void Connection::sendMsg( const struct sockaddr_in *targetAddress, const void *data, size_t length ) {
     sequence++;
-  
+
     ssize_t sz = ::sendto(broadcastSocket, data, length,
                     MSG_CONFIRM,
                     (const struct sockaddr *)targetAddress,
@@ -163,7 +163,12 @@ void Connection::sendMsg( const struct sockaddr_in *targetAddress, const void *d
         if (g_logger) {
             char addr_str[INET_ADDRSTRLEN];
             inet_ntop(AF_INET, &targetAddress->sin_addr, addr_str, sizeof(addr_str));
-            LOG_DEBUG("Connection sent {} bytes to {}:{}", length, addr_str, ntohs(targetAddress->sin_port));
+            LOG_INFO("Connection sent {} bytes to {}:{}", length, addr_str, ntohs(targetAddress->sin_port));
+            stringstream ss;  
+            for( int i = 0 ; i < length ; i++ ) {
+                ss << hex << setw(2) << setfill('0') << (int)((uint8_t *)data)[i] << " " ;
+            }
+            LOG_DEBUG("Data: {}", ss.str());    
         }
     }
 }

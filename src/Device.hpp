@@ -34,7 +34,7 @@ typedef struct {
 } MSG408;
 
 
-typedef std::function<void(const struct sockaddr_in &targetAddress, 
+typedef std::function<void(const struct sockaddr_in *targetAddress, 
                            const void *data, 
                            size_t length)> sender_function;
 
