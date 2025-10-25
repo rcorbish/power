@@ -98,8 +98,10 @@ void Connection::recvMsg( int skt ) {
             }
             LOG_DEBUG("Device received {} bytes: {}", n, ss.str() );
         }        
-        const auto isOn = (msg[128] == 1) && (msg[129] != 0);
+        const auto isOn = (msg[128] == 1);
         const auto deviceId = string((char *)&msg[16], 32);
+        LOG_DEBUG( "Scanning for device [{}], in {} devices", deviceId, devices.size() );
+        
         std::lock_guard<std::mutex> lock(devicesMutex);
         auto it = devices.find(deviceId);
         if (it != devices.end()) {
