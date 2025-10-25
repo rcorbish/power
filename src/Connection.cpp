@@ -185,7 +185,10 @@ Connection::Connection() {
         close(broadcastSocket);
         throw NetworkException(errno, "bind failed");
     }
-    
+
+    socklen_t addrlen = sizeof(localAddress);
+    getsockname(broadcastSocket, (struct sockaddr *)&localAddress, &addrlen);
+
     char addr_str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &localAddress.sin_addr, addr_str, sizeof(addr_str));
     localPort = ntohs(localAddress.sin_port);
