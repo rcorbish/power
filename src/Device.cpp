@@ -137,50 +137,31 @@ Device::Device(const MSG408 &deviceInfo, sender_function _sender) : sender(_send
 void Device::get() {
     isReady = false;
     uint8_t msg[128];
+    memset( msg, 0, sizeof(msg) );
 
-    uint8_t *p = msg;
-    *p++ = 0x17;
-    *p++ = 0x00;
-    *p++ = 0x05;
-    *p++ = 0x00;
+    msg[0] = 0x17; // command: get state
+    msg[1] = 0x00;
+    msg[2] = 0x05;
+    msg[3] = 0x00;
 
-    *p++ = 0x00;
-    *p++ = 0x00;
-    *p++ = (sequence & 0xff00) >> 8;
-    *p++ = sequence & 0x00ff;
+    msg[4] = 0x00;
+    msg[5] = 0x00;
+    msg[6] = (sequence & 0xff00) >> 8;
+    msg[7] = sequence & 0x00ff;
 
-    *p++ = 0x00;
-    *p++ = 0x00;
-
-    memcpy(p, deviceInfo.version, sizeof(deviceInfo.version));
-    p += sizeof(deviceInfo.version);
-    memcpy(p, deviceInfo.id, sizeof(deviceInfo.id));
-    p += sizeof(deviceInfo.id);
-    memcpy(p, deviceInfo.name, sizeof(deviceInfo.name));
-    p += sizeof(deviceInfo.name);
-    memcpy(p, deviceInfo.shortid, sizeof(deviceInfo.shortid));
-    p += sizeof(deviceInfo.shortid);
-
-    *p++ = 0x00;
-    *p++ = 0x00;
-    *p++ = 0x00;
-    *p++ = 0x00;
+    memcpy(&msg[16], deviceInfo.name, sizeof(deviceInfo.name));
 
     long now = (1000L * time(nullptr)) & 0xffffffff;
-    *p++ = now & 0xff;
-    *p++ = (now & 0x0000ff00) >> 8;
-    *p++ = (now & 0x00ff0000) >> 16;
-    *p++ = (now & 0xff000000) >> 24;
+    msg[116] = now & 0xff;
+    msg[117] = (now & 0x0000ff00) >> 8;
+    msg[118] = (now & 0x00ff0000) >> 16;
+    msg[119] = (now & 0xff000000) >> 24;
 
-    *p++ = 0x00;
-    *p++ = 0x00;
-    *p++ = 0x00;
-    *p++ = 0x00;
 
-    *p++ = 0xde; // server ident
-    *p++ = 0xad;
-    *p++ = 0xbe;
-    *p++ = 0xef;
+    msg[124] = 0xde; // server ident
+    msg[125] = 0xad;
+    msg[126] = 0xbe;
+    msg[127] = 0xef;
 
     sender(&remoteAddress, msg, sizeof(msg));
 }
