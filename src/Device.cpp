@@ -106,7 +106,7 @@ int Device::connect() const {
 
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = localPort;
+    address.sin_port = htons(localPort);
 
     if (::bind(localSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
         if (g_logger) {

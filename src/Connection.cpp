@@ -201,7 +201,6 @@ Connection::Connection() {
         }
         throw NetworkException(err, "Thread creation failed");
     }
-
 }
 
 void Connection::startDiscovery() {
