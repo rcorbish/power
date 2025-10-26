@@ -135,6 +135,7 @@ Device::Device(const MSG408 &deviceInfo, sender_function _sender) : sender(_send
 // }
 
 void Device::get() {
+    sequence++;
     isReady = false;
     uint8_t msg[128];
     memset( msg, 0, sizeof(msg) );
@@ -144,8 +145,8 @@ void Device::get() {
     msg[2] = 0x05;
     msg[3] = 0x00;
 
-    msg[4] = 0x00;
-    msg[5] = 0x00;
+    msg[4] = (sequence & 0xff000000) >> 24;
+    msg[5] = (sequence & 0xff0000) >> 16;
     msg[6] = (sequence & 0xff00) >> 8;
     msg[7] = sequence & 0x00ff;
 
@@ -167,6 +168,8 @@ void Device::get() {
 }
 
 void Device::set(bool switchOn) {
+    sequence++;
+
     uint8_t msg[130];
 
     uint8_t *p = msg;
@@ -176,8 +179,8 @@ void Device::set(bool switchOn) {
     *p++ = 0x05;
     *p++ = 0x00;
 
-    *p++ = 0x00;    // sequence
-    *p++ = 0x00;
+    *p++ = (sequence & 0xff000000) >> 24;
+    *p++ = (sequence & 0xff0000) >> 16;
     *p++ = (sequence & 0xff00) >> 8;
     *p++ = sequence & 0x00ff;
 
