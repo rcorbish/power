@@ -99,12 +99,8 @@ void Connection::recvMsg( int skt ) {
             LOG_DEBUG("Device received {} bytes: {}", n, ss.str() );
         }        
         const auto isOn = (msg[128] == 1) && (msg[129] == 1);  // size + state byte 
-        
+
         const auto deviceId = string((char *)&msg[16]);
-        LOG_DEBUG( "Scanning for device [{}], from", deviceId);
-        for( auto &pair : devices ) {
-            LOG_DEBUG(" [{}]", pair.first);
-        }
 
         std::lock_guard<std::mutex> lock(devicesMutex);
         auto it = devices.find(deviceId);
