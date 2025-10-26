@@ -87,10 +87,9 @@ void Connection::recvMsg( int skt ) {
                                 });
         }
     } else if( n == 128) {
-        // Ignore discovery responses
-        LOG_DEBUG("Received 128 byte discovery response - ignoring");
+        LOG_DEBUG("Received 128 bytes response");
     } else if( n == 130 ) {
-        LOG_DEBUG("Received 130 byte discovery response - processing state update");
+        LOG_DEBUG("Received 130 bytes - processing state update");
         if (g_logger) {
             stringstream ss;  
             for( int i = 0 ; i < n ; i++ ) {
