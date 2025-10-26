@@ -215,8 +215,8 @@ void Device::set(bool switchOn) {
     *p++ = 0xbe;
     *p++ = 0xef;
 
-    *p++ = (switchOn ? 0x01 : 0x00);
     *p++ = 0x00;
+    *p++ = (switchOn ? 0x01 : 0x00);
 
     sender(&remoteAddress, msg, sizeof(msg));
 }
