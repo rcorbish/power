@@ -166,7 +166,7 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data ) {
             char addr_buf[256];
             const auto len = mg_snprintf( addr_buf, sizeof(addr_buf), "%.*s, Bad call from %M", (int)msg->uri.len, msg->uri.buf,  mg_print_ip, &nc->rem );
             LOG_WARN("{}", addr_buf);
-            mg_http_reply(nc, 400, nullptr, "");
+            mg_http_reply(nc, 418, "Server: Teapot\r\n", "I'm a teapot");
         }
     } else if (ev == MG_EV_ACCEPT) {
         mg_tls_init( nc, &tls_opts);
